@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Kevin Li — software engineer. Projects, interactive demos, and short write-ups.">
+<title>Kevin Li</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='12' fill='%23BC4A76'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400..700&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --ground: #FAF9F6; --panel: #FFFFFF; --ink: #1B1A18; --muted: #6C6A64;
+    --faint: #96938B; --line: #E7E4DD; --accent: #BC4A76; --accent-soft: rgba(188,74,118,0.10);
+    --warn: #C67B3C; --warn-soft: rgba(198,123,60,0.16);
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ground: #14130F; --panel: #1C1B17; --ink: #ECEAE3; --muted: #9C988D;
+      --faint: #77746B; --line: #2B2924; --accent: #E884A9; --accent-soft: rgba(232,132,169,0.14);
+      --warn: #D69A5C; --warn-soft: rgba(214,154,92,0.18);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #14130F; --panel: #1C1B17; --ink: #ECEAE3; --muted: #9C988D;
+    --faint: #77746B; --line: #2B2924; --accent: #E884A9; --accent-soft: rgba(232,132,169,0.14);
+    --warn: #D69A5C; --warn-soft: rgba(214,154,92,0.18);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+
+  .wrap { display: grid; grid-template-columns: 236px minmax(0,1fr); align-content: start; max-width: 1020px; margin: 0 auto; min-height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  .side { position: sticky; top: 0; align-self: start; height: 100vh; padding: 54px 30px 30px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 22px; }
+  .name { font-size: 21px; font-weight: 650; letter-spacing: -0.015em; margin: 0 0 2px; }
+  .role { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 0.01em; }
+  .socials { display: flex; gap: 6px; }
+  .socials a { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); text-decoration: none; transition: color .15s, background .15s; }
+  .socials a:hover { color: var(--accent); background: var(--accent-soft); }
+  .socials svg { width: 17px; height: 17px; }
+
+  nav { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+  .navlink { font-family: var(--mono); font-size: 13px; letter-spacing: 0.01em; text-decoration: none; color: var(--muted); padding: 7px 11px; border-radius: 8px; display: flex; align-items: center; gap: 9px; cursor: pointer; transition: color .15s, background .15s; }
+  .navlink::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .35; transition: opacity .15s, transform .15s; }
+  .navlink:hover { color: var(--ink); }
+  .navlink.active { color: var(--accent); background: var(--accent-soft); }
+  .navlink.active::before { opacity: 1; transform: scale(1.15); }
+
+  .side-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+  .side-foot .sig { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+  .toggle { background: none; border: 1px solid var(--line); color: var(--muted); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; }
+  .toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .toggle svg { width: 15px; height: 15px; }
+
+  /* ---------- Main ---------- */
+  main { padding: 74px 60px 90px; max-width: 700px; }
+  .view { display: none; }
+  .view.active { display: block; animation: fade .35s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .view.active { animation: none; } }
+
+  h1.lead { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; margin: 0 0 18px; line-height: 1.25; text-wrap: balance; }
+  h1.lead .wave { color: var(--accent); }
+  .intro { color: var(--muted); font-size: 16.5px; max-width: 60ch; }
+  .intro a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .intro strong { color: var(--ink); font-weight: 600; }
+
+  .section-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin: 52px 0 18px; display: flex; align-items: center; gap: 12px; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .thing { padding: 4px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+  .thing:last-child { border-bottom: none; }
+  .thing h3 { margin: 0 0 4px; font-size: 16px; font-weight: 620; letter-spacing: -0.01em; }
+  .thing p { margin: 0 0 10px; color: var(--muted); font-size: 15px; }
+  .brackets { font-family: var(--mono); font-size: 12.5px; display: flex; gap: 14px; }
+  .brackets a { color: var(--accent); text-decoration: none; }
+  .brackets a:hover { text-decoration: underline; }
+  .brackets a::before { content: "["; color: var(--faint); }
+  .brackets a::after { content: "]"; color: var(--faint); }
+
+  .demo { margin: 14px 0 4px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .board { display: grid; grid-template-columns: repeat(4, 34px); gap: 6px; }
+  .cell { width: 34px; height: 34px; border-radius: 7px; border: 1px solid var(--line); background: var(--ground); cursor: pointer; padding: 0; transition: background .12s, transform .08s, box-shadow .12s; }
+  .cell:hover { transform: translateY(-1px); }
+  .cell.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .demo-meta { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .demo-meta b { color: var(--ink); font-weight: 600; }
+  .demo-meta button { font-family: var(--mono); font-size: 11.5px; margin-top: 10px; background: none; border: 1px solid var(--line); color: var(--muted); padding: 5px 10px; border-radius: 7px; cursor: pointer; display: block; }
+  .demo-meta button:hover { color: var(--accent); border-color: var(--accent); }
+  .win { color: var(--accent); }
+
+  /* ---------- Posts list ---------- */
+  .post-row { display: grid; grid-template-columns: 108px 1fr; gap: 18px; padding: 15px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit; cursor: pointer; align-items: baseline; }
+  .post-row:hover .post-title { color: var(--accent); }
+  .post-date { font-family: var(--mono); font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .post-title { font-size: 16px; font-weight: 560; letter-spacing: -0.01em; transition: color .15s; }
+  .post-sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+  /* ---------- Article ---------- */
+  .back { font-family: var(--mono); font-size: 12.5px; color: var(--muted); text-decoration: none; cursor: pointer; display: inline-flex; gap: 7px; align-items: center; margin-bottom: 30px; }
+  .back:hover { color: var(--accent); }
+  article h1 { font-size: 27px; font-weight: 650; letter-spacing: -0.02em; margin: 0 0 6px; line-height: 1.25; text-wrap: balance; }
+  article h2 { font-size: 18px; font-weight: 620; letter-spacing: -0.01em; margin: 40px 0 10px; }
+  article .meta { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-bottom: 28px; }
+  article p { color: var(--ink); margin: 0 0 18px; }
+  article p.note { color: var(--muted); font-size: 14.5px; }
+  article code { font-family: var(--mono); font-size: 0.86em; background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 5px; }
+  article em { color: var(--muted); }
+  aside.callout { border-left: 2px solid var(--warn); background: var(--warn-soft); padding: 14px 16px; border-radius: 0 10px 10px 0; margin: 22px 0; font-size: 14.5px; color: var(--ink); }
+  aside.callout b.tag { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--warn); display: block; margin-bottom: 6px; }
+  aside.callout a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--warn); text-underline-offset: 2px; }
+  aside.callout .src { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  figure { margin: 24px 0; }
+  figcaption { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-top: 8px; text-align: center; }
+  canvas { display: block; max-width: 100%; }
+  figure canvas { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+
+  .sim { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 18px; margin: 22px 0; }
+  .race { display: flex; gap: 16px; flex-wrap: wrap; }
+  .race > div { flex: 1; min-width: 200px; }
+  .race canvas { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--ground); }
+  .race .cap { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+  .race .cap b { color: var(--ink); }
+  .simbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 16px 0 6px; }
+  .clock { font-family: var(--mono); font-size: 12px; color: var(--faint); }
+  .clock b { color: var(--accent); }
+  .runbtn { font-family: var(--mono); font-size: 12.5px; background: var(--accent); color: #fff; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+  .runbtn:hover { filter: brightness(1.05); }
+  .stats { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.9; margin-top: 12px; }
+  .stats .dotA, .stats .dotB { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .stats .dotA { background: var(--accent); }
+  .stats .dotB { background: var(--warn); }
+  .stats b { color: var(--ink); }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 720px) {
+    .wrap { grid-template-columns: 1fr; }
+    .side { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); padding: 22px 20px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 14px 16px; }
+    .side > div:first-child { margin-right: auto; }
+    .side-foot { order: 0; margin: 0; }
+    .side-foot .sig { display: none; }
+    .socials { order: 1; flex-basis: 100%; }
+    nav { order: 2; flex-basis: 100%; flex-direction: row; gap: 6px; margin: 0; }
+    .navlink { padding: 8px 14px; }
+    main { padding: 32px 20px 60px; }
+    h1.lead { font-size: 26px; }
+    article h1 { font-size: 23px; }
+    article h2 { font-size: 17px; }
+    .post-row { grid-template-columns: 92px 1fr; gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <aside class="side">
+    <div>
+      <div class="name">Kevin Li</div>
+      <div class="role">software engineer</div>
+    </div>
+    <div class="socials">
+      <a href="https://github.com/LiKev12" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg></a>
+      <a href="https://www.linkedin.com/in/likevin12" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 20.4h-3.6v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9v5.7H9.3V9h3.4v1.6h.1c.5-.9 1.7-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.2zM5.3 7.4a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zM7.1 20.4H3.5V9h3.6v11.4zM22.2 0H1.8C.8 0 0 .8 0 1.7v20.6c0 .9.8 1.7 1.8 1.7h20.4c1 0 1.8-.8 1.8-1.7V1.7c0-.9-.8-1.7-1.8-1.7z"/></svg></a>
+      <a href="mailto:kevinli1258@gmail.com" aria-label="Email kevinli1258@gmail.com" title="kevinli1258@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="M3 6l9 6.5L21 6"/></svg></a>
+      <a href="Kevin_K_Li_Resume.pdf" target="_blank" rel="noopener" aria-label="Résumé (PDF)" title="Résumé (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></a>
+    </div>
+    <nav>
+      <a class="navlink active" data-view="home">Home</a>
+      <a class="navlink" data-view="posts">Jots</a>
+    </nav>
+    <div class="side-foot">
+      <span class="sig">© 2026</span>
+      <button class="toggle" id="themeBtn" aria-label="Toggle theme" title="Toggle theme"></button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- HOME -->
+    <section class="view active" id="view-home">
+      <h1 class="lead">Hey, I'm Kevin <span class="wave">👋</span></h1>
+      <p class="intro">
+        Full-time <strong>software engineer</strong>, part-time rec <strong>tennis</strong> player, and a
+        serial hobby-dabbler — <strong>chess</strong>, cooking, running, and photography all get their turn.
+        I like building small, sharp things and occasionally <a href="#" data-view="posts">jotting them down</a>.
+        Reach me anytime at <a href="mailto:kevinli1258@gmail.com">kevinli1258@gmail.com</a>.
+      </p>
+
+      <div class="section-label">Selected things</div>
+
+      <div class="thing">
+        <h3>Lights Out</h3>
+        <p>A tiny browser board game. Click a tile to flip it and its neighbors — turn the whole board off to win.</p>
+        <div class="demo">
+          <div class="board" id="board" aria-label="Lights Out board"></div>
+          <div class="demo-meta">
+            moves: <b id="moves">0</b><br>
+            <span id="status">4×4 · get every tile dark</span>
+            <button id="reset">reset board</button>
+          </div>
+        </div>
+        <div class="brackets"><a href="#">play</a><a href="#">source</a></div>
+      </div>
+
+      <div class="thing">
+        <h3>Your next project</h3>
+        <p>A one-line description of the thing. Placeholder — swap in a real demo, screenshot, or link.</p>
+        <div class="brackets"><a href="#">demo</a><a href="#">source</a></div>
+      </div>
+    </section>
+
+    <!-- POSTS LIST -->
+    <section class="view" id="view-posts">
+      <h1 class="lead">Jots</h1>
+      <p class="intro">Short write-ups — usually with something interactive baked in.</p>
+      <div class="section-label">Writing</div>
+      <div id="postlist"></div>
+    </section>
+
+    <!-- ARTICLE -->
+    <section class="view" id="view-article">
+      <a class="back" data-view="posts">← back to jots</a>
+      <div id="article-body"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const views = { home: 'view-home', posts: 'view-posts', article: 'view-article' };
+  let cleanup = null;
+  function runCleanup() { if (cleanup) { cleanup(); cleanup = null; } }
+  function show(view) {
+    runCleanup();
+    Object.values(views).forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(views[view]).classList.add('active');
+    document.querySelectorAll('.navlink').forEach(n => n.classList.toggle('active', n.dataset.view === view));
+    window.scrollTo(0, 0);
+  }
+  document.addEventListener('click', e => { const t = e.target.closest('[data-view]'); if (t) { e.preventDefault(); show(t.dataset.view); } });
+
+  // ---------- Theme ----------
+  const sun = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1.5 12h3M19.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>';
+  const moon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  const btn = document.getElementById('themeBtn');
+  function isDark() { const t = document.documentElement.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+  function paintBtn() { btn.innerHTML = isDark() ? sun : moon; }
+  btn.addEventListener('click', () => { document.documentElement.setAttribute('data-theme', isDark() ? 'light' : 'dark'); paintBtn(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintBtn);
+  paintBtn();
+  const V = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  // ---------- Lights Out ----------
+  const N = 4, boardEl = document.getElementById('board');
+  let grid = [], moves = 0;
+  const movesEl = document.getElementById('moves'), statusEl = document.getElementById('status');
+  function buildLO() {
+    boardEl.innerHTML = ''; grid = [];
+    for (let i = 0; i < N*N; i++) { const b = document.createElement('button'); b.className = 'cell'; b.addEventListener('click', () => clickLO(i, true)); boardEl.appendChild(b); grid.push(false); }
+    for (let k = 0; k < 6; k++) clickLO(Math.floor(Math.random()*N*N), false);
+    moves = 0; movesEl.textContent = '0'; statusEl.textContent = '4×4 · get every tile dark'; statusEl.classList.remove('win');
+  }
+  function clickLO(i, count) {
+    const r = Math.floor(i/N), c = i%N;
+    [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([y,x]) => { if (y>=0&&y<N&&x>=0&&x<N) { const j=y*N+x; grid[j]=!grid[j]; boardEl.children[j].classList.toggle('on', grid[j]); } });
+    if (count) { moves++; movesEl.textContent = moves; if (grid.every(v => !v)) { statusEl.textContent = 'solved in ' + moves + ' moves ✦'; statusEl.classList.add('win'); } }
+  }
+  document.getElementById('reset').addEventListener('click', buildLO);
+  buildLO();
+
+  /* ==================== GRID-WALK: model + sim ====================
+     10 m blocks · walk 10 m/s (1 s/block) · lights alternate green 10 s
+     each way, independent random phase per intersection.  */
+  const T = 10;
+  function makePhases(tx, ty) { const p = []; for (let i=0;i<=tx;i++){ p[i]=[]; for (let j=0;j<=ty;j++) p[i][j]=Math.random()*2*T; } return p; }
+  function eastGreen(ph,x,y,t){ const c=((t+ph[x][y])%(2*T)+2*T)%(2*T); return c<T; }
+  function waitEast(ph,x,y,t){ const c=((t+ph[x][y])%(2*T)+2*T)%(2*T); return c<T?0:2*T-c; }
+  function waitNorth(ph,x,y,t){ const c=((t+ph[x][y])%(2*T)+2*T)%(2*T); return c<T?T-c:0; }
+
+  function simulate(tx, ty) {
+    const ph = makePhases(tx, ty); let x=0,y=0,t=0;
+    while (x<tx || y<ty) {
+      const e=x<tx, n=y<ty;
+      if (e && n) { if (eastGreen(ph,x,y,t)) x++; else y++; t+=1; }
+      else if (e) { t += waitEast(ph,x,y,t); x++; t+=1; }
+      else { t += waitNorth(ph,x,y,t); y++; t+=1; }
+    }
+    return t;
+  }
+  function simulateRecord(tx, ty) {
+    const ph = makePhases(tx, ty); let x=0,y=0,t=0; const path=[{t:0,x:0,y:0}];
+    while (x<tx || y<ty) {
+      const e=x<tx, n=y<ty;
+      if (e && n) { path.push({t,x,y}); if (eastGreen(ph,x,y,t)) x++; else y++; t+=1; path.push({t,x,y}); }
+      else if (e) { t += waitEast(ph,x,y,t); path.push({t,x,y}); x++; t+=1; path.push({t,x,y}); }
+      else { t += waitNorth(ph,x,y,t); path.push({t,x,y}); y++; t+=1; path.push({t,x,y}); }
+    }
+    return { time: t, path };
+  }
+  function simulateNoLights(tx, ty) {
+    let x=0,y=0,t=0; const path=[{t,x,y}];
+    while (x<tx || y<ty) { const e=x<tx, n=y<ty; if (e&&n) { if (Math.random()<0.5) x++; else y++; } else if (e) x++; else y++; t+=1; path.push({t,x,y}); }
+    return { time: t, path };
+  }
+  function posAt(path, ts) {
+    if (ts <= 0) return { x: path[0].x, y: path[0].y };
+    for (let i=0;i<path.length-1;i++){ const a=path[i], b=path[i+1]; if (ts>=a.t && ts<=b.t){ const f=b.t===a.t?1:(ts-a.t)/(b.t-a.t); return { x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f }; } }
+    const l=path[path.length-1]; return { x:l.x, y:l.y };
+  }
+
+  // ---- shared canvas grid helpers (10x10) ----
+  function geom(W,H){ const pad=36, G=10; const cell=(Math.min(W,H)-pad*2)/G; const ox=(W-cell*G)/2, oy=(H+cell*G)/2; return { G, cell, sx:x=>ox+x*cell, sy:y=>oy-y*cell }; }
+  function drawLabel(ctx,W,H,px,py,text,color){
+    ctx.font = '12px ' + V('--mono'); const w = ctx.measureText(text).width;
+    let lx = px + 9; if (lx + w > W-5) lx = px - 9 - w; lx = Math.max(5, Math.min(lx, W-5-w));
+    let ly = Math.max(15, Math.min(py - 9, H-6));
+    ctx.textAlign = 'left'; ctx.fillStyle = color; ctx.fillText(text, lx, ly);
+  }
+  function drawGrid(ctx,W,H,shades){
+    const { G, cell, sx, sy } = geom(W,H);
+    ctx.clearRect(0,0,W,H);
+    (shades||[]).forEach(r => { ctx.fillStyle = r.fill; ctx.fillRect(sx(r.x0), sy(r.y1), (r.x1-r.x0)*cell, (r.y1-r.y0)*cell); });
+    ctx.strokeStyle = V('--line'); ctx.lineWidth = 1;
+    for (let i=0;i<=G;i++){ ctx.beginPath(); ctx.moveTo(sx(i),sy(0)); ctx.lineTo(sx(i),sy(G)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(sx(0),sy(i)); ctx.lineTo(sx(G),sy(i)); ctx.stroke(); }
+    return { cell, sx, sy };
+  }
+  function drawTarget(ctx, sx, sy, tx, ty, color){ ctx.fillStyle = color; ctx.globalAlpha = .16; ctx.beginPath(); ctx.arc(sx(tx),sy(ty),18,0,7); ctx.fill(); ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(sx(tx),sy(ty),4.5,0,7); ctx.fill(); }
+
+  // ---- reusable animated walk on a 10x10 grid ----
+  function animateWalk(id, cfg) {
+    const cv = document.getElementById(id); if (!cv) return () => {};
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const K = cfg.K || 10, speed = cfg.speed || 4.5, mk = cfg.mode==='lights' ? simulateRecord : simulateNoLights;
+    let groups, t0, raf = null;
+    function seed(){ groups = cfg.targets.map(tg => ({ tg, dots: Array.from({length:K}, () => mk(tg.tx,tg.ty)) })); t0 = performance.now(); }
+    function draw(ts){
+      const { sx, sy } = drawGrid(ctx, W, H, cfg.shades);
+      groups.forEach(g => drawTarget(ctx, sx, sy, g.tg.tx, g.tg.ty, g.tg.color));
+      ctx.fillStyle = V('--ink'); ctx.beginPath(); ctx.arc(sx(0),sy(0),4.5,0,7); ctx.fill();
+      drawLabel(ctx, W, H, sx(0), sy(0), 'start', V('--muted'));
+      groups.forEach(g => drawLabel(ctx, W, H, sx(g.tg.tx), sy(g.tg.ty), g.tg.name, g.tg.color));
+      groups.forEach(g => {
+        let arr = 0;
+        g.dots.forEach(d => { const p = posAt(d.path, ts); const done = ts>=d.time; if (done) arr++; ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),4,0,7); ctx.fillStyle = g.tg.color; ctx.globalAlpha = done?1:.5; ctx.fill(); ctx.globalAlpha = 1; });
+        if (g.tg.counter){ const el = document.getElementById(g.tg.counter); if (el) el.textContent = arr; }
+      });
+    }
+    function frame(){
+      const ts = (performance.now()-t0)/1000*speed; draw(ts);
+      const maxT = Math.max(...groups.flatMap(g => g.dots.map(d => d.time)));
+      if (ts > maxT + 2.5) seed();
+      raf = requestAnimationFrame(frame);
+    }
+    seed();
+    if (reduce) draw(999); else frame();
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }
+
+  // ---------- Posts ----------
+  const posts = [
+    {
+      date: '2026 · 09 · 20',
+      title: 'Grid-walk: a thought experiment (and maybe an interview question)',
+      sub: 'Where theory meets practice — the intersection of the two, literally.',
+      init: gridWalkInit,
+      body: `
+        <h1>Grid-walk: a thought experiment (and maybe an interview question)</h1>
+        <div class="meta">September 20, 2026 · 10 min read</div>
+        <p>You're standing at a corner in Manhattan — call it <code>(0,0)</code> — on a clean 10×10 grid of blocks.
+        You can only walk along sidewalks: north, south, east, west. No cutting diagonally through buildings.</p>
+        <p>Two friends are waiting. One is at <code>(5,5)</code>, the other at <code>(8,2)</code>. Both are exactly
+        <strong>10 blocks away</strong>. <em>Which one do you reach first?</em></p>
+
+        <h2>Intuition 1 — "They're the same"</h2>
+        <p>Ten blocks is ten blocks. Whether you split it 5-and-5 or 8-and-2, you cover the same total distance, so you
+        arrive at the same time. With no lights to worry about, that's exactly right — watch both packs land together:</p>
+        <figure><canvas id="walk1" width="500" height="500"></canvas><figcaption>no lights · every walker covers 10 blocks and arrives at the same instant — a genuine tie</figcaption></figure>
+
+        <h2>Intuition 2 — "Wait, it's a city"</h2>
+        <p>Blocks aren't free. At every corner there's a light. Here's the key idea: at a corner where <em>both</em>
+        remaining directions still make progress, a red light costs you nothing — you just take the green one and keep
+        moving. You only ever <em>wait</em> once you're pinned to a single direction.</p>
+        <p>That's where <code>(5,5)</code> pulls ahead. A balanced target keeps you in the shaded "free zone" for almost
+        the whole trip. <code>(8,2)</code> forces you up to your ceiling after two blocks, then marches you down the
+        orange corridor where every red light is dead time. The number of shortest routes captures the freedom exactly:
+        <code>C(10,5)=252</code> ways to reach <code>(5,5)</code> versus only <code>C(10,2)=45</code> for <code>(8,2)</code>.</p>
+        <figure><canvas id="walk2" width="500" height="500"></canvas><figcaption>same walkers, now with lights · magenta stays free longer; orange gets trapped in the forced corridor</figcaption></figure>
+
+        <aside class="callout"><b class="tag">fact-check · the "green wave"</b>
+          Signal progression — the "green wave" — times consecutive lights so travel at one design speed catches greens in
+          a row. NYC DOT has rolled it out along Manhattan avenues, starting on Third Avenue and expanding to First, Second,
+          and Eighth, tuned to about <strong>15 mph — notably for cyclists, not cars</strong>, with the whole corridor sharing
+          one cycle length and a per-intersection offset. So your hunch is real. But a green wave rewards going <em>straight</em>
+          along the coordinated avenue, which here favors the straighter <code>(8,2)</code>, and it's tuned to one speed and
+          mode, not a pedestrian on a Walk phase. It's a genuine competing effect — so the model below assumes symmetric,
+          independent lights to isolate the freedom argument.
+          <div class="src">sources: <a href="https://en.wikipedia.org/wiki/Green_wave" target="_blank" rel="noopener">Wikipedia — Green wave</a> · <a href="https://www.nyc.gov/html/dot/html/pr2026/nyc-dot-to-install-green-wave-signal-timing.shtml" target="_blank" rel="noopener">NYC DOT (2026)</a></div>
+        </aside>
+
+        <h2>Intuition 3 — "The wait isn't always 10 seconds"</h2>
+        <p>Here's the piece the first two glossed over: a red light doesn't cost a flat 10 seconds. It costs whatever's left
+        until your green — anywhere from 0 (you arrive as it turns) to the full 10 (you just missed it), depending on timing.
+        Average that over every forced corner, across many walks, and the only honest way to settle it is to simulate.</p>
+        <p>Assumptions, kept simple: each block is <code>10 m</code>, you walk <code>10 m/s</code> (1 s/block), and every light
+        is green <code>10 s</code> one way then <code>10 s</code> the other, with a random offset per intersection. A greedy
+        walker takes any green that makes progress and only waits when cornered. Each dot is one such walker.</p>
+        <div class="sim">
+          <div class="race">
+            <div><canvas id="raceA" width="320" height="320"></canvas><div class="cap"><span>to <b>(5,5)</b></span><span>arrived <b id="arrA">0</b>/12</span></div></div>
+            <div><canvas id="raceB" width="320" height="320"></canvas><div class="cap"><span>to <b>(8,2)</b></span><span>arrived <b id="arrB">0</b>/12</span></div></div>
+          </div>
+          <div class="simbar">
+            <button class="runbtn" id="runBtn">Run 1,000 walks each ↻</button>
+            <span class="clock">sim clock · <b id="clk">0.0</b>s</span>
+          </div>
+          <figure style="margin:8px 0 0"><canvas id="hist" width="680" height="220"></canvas><figcaption>arrival-time distribution over 1,000 simulated walks each</figcaption></figure>
+          <div class="stats" id="stats"></div>
+        </div>
+
+        <h2>The takeaway</h2>
+        <p>Pure theory says it's a tie — 10 blocks either way. Add one real-world detail, traffic lights, and the symmetry
+        breaks: the balanced target wins because balance buys you <em>options</em>, and options let you route around red
+        lights. The straighter target trades those options for a corridor of forced waits. That gap — between the
+        distance-only answer and the with-constraints answer — is the whole point. Theory meets practice at the intersection.
+        Literally.</p>
+        <p class="note">On a real site this simulation would be its own component dropped into the Markdown; here it's inline
+        just to prove the interactive-post idea works. Numbers regenerate each run, so they'll wiggle a little.</p>`
+    },
+    {
+      date: '2026 · 09 · 05',
+      title: 'Animating a tennis serve with 20 lines of Canvas',
+      sub: 'A parabola, some drag, and a bounce — live in the page.',
+      init: tennisInit,
+      body: `
+        <h1>Animating a tennis serve with 20 lines of Canvas</h1>
+        <div class="meta">September 5, 2026 · 3 min read</div>
+        <p>A post doesn't have to be a static wall of text — it can <em>show</em> the thing. Below is a real
+        <code>&lt;canvas&gt;</code> running projectile motion with a little energy loss on each bounce.</p>
+        <figure><canvas id="tennis" width="640" height="260"></canvas><figcaption>gravity + restitution · runs in your browser</figcaption></figure>
+        <p>The math is barely more than high-school kinematics: each frame the vertical velocity gains a bit of gravity,
+        position updates, and on contact with the floor the velocity flips and shrinks by a restitution factor.</p>
+        <p class="note">Placeholder demo — kept around to show that arbitrary HTML/CSS/JS animation drops cleanly into a post.</p>`
+    }
+  ];
+
+  const list = document.getElementById('postlist');
+  posts.forEach((p, i) => {
+    const row = document.createElement('a');
+    row.className = 'post-row';
+    row.innerHTML = `<div class="post-date">${p.date}</div><div><div class="post-title">${p.title}</div><div class="post-sub">${p.sub}</div></div>`;
+    row.addEventListener('click', () => openPost(i));
+    list.appendChild(row);
+  });
+  function openPost(i) {
+    document.getElementById('article-body').innerHTML = posts[i].body;
+    show('article');
+    if (posts[i].init) cleanup = posts[i].init() || null;
+  }
+
+  /* ---------------- Grid-walk post init ---------------- */
+  function gridWalkInit() {
+    const stops = [];
+    const A = V('--accent'), B = V('--warn');
+
+    stops.push(animateWalk('walk1', {
+      mode: 'nolights',
+      targets: [ { tx:5,ty:5, color:A, name:'(5,5)' }, { tx:8,ty:2, color:B, name:'(8,2)' } ]
+    }));
+    stops.push(animateWalk('walk2', {
+      mode: 'lights',
+      shades: [ { x0:0,y0:0,x1:5,y1:5, fill:V('--accent-soft') }, { x0:2,y0:1.6,x1:8,y1:2.4, fill:V('--warn-soft') } ],
+      targets: [ { tx:5,ty:5, color:A, name:'(5,5)' }, { tx:8,ty:2, color:B, name:'(8,2)' } ]
+    }));
+
+    // Intuition 3 race (two 10x10 grids, one clock)
+    const cvA = document.getElementById('raceA'), cvB = document.getElementById('raceB');
+    const clk = document.getElementById('clk'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const K = 12, speed = 4.5;
+    let dA, dB, t0, raf = null;
+    function seed(){ dA = Array.from({length:K}, () => simulateRecord(5,5)); dB = Array.from({length:K}, () => simulateRecord(8,2)); t0 = performance.now(); }
+    function drawOne(cv, tx, ty, dots, color, ts, counter){
+      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+      const { sx, sy } = drawGrid(ctx, W, H);
+      drawTarget(ctx, sx, sy, tx, ty, color);
+      ctx.fillStyle = V('--ink'); ctx.beginPath(); ctx.arc(sx(0),sy(0),4,0,7); ctx.fill();
+      drawLabel(ctx, W, H, sx(0), sy(0), 'start', V('--muted'));
+      drawLabel(ctx, W, H, sx(tx), sy(ty), '('+tx+','+ty+')', color);
+      let arr = 0;
+      dots.forEach(d => { const p = posAt(d.path, ts); const done = ts>=d.time; if (done) arr++; ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),4,0,7); ctx.fillStyle = color; ctx.globalAlpha = done?1:.5; ctx.fill(); ctx.globalAlpha = 1; });
+      document.getElementById(counter).textContent = arr;
+    }
+    function frame(){
+      const ts = (performance.now()-t0)/1000*speed;
+      drawOne(cvA, 5,5, dA, V('--accent'), ts, 'arrA');
+      drawOne(cvB, 8,2, dB, V('--warn'), ts, 'arrB');
+      clk.textContent = ts.toFixed(1);
+      const maxT = Math.max(...dA.map(d=>d.time), ...dB.map(d=>d.time));
+      if (ts > maxT + 2.5) seed();
+      raf = requestAnimationFrame(frame);
+    }
+    seed();
+    if (reduce) { drawOne(cvA,5,5,dA,V('--accent'),999,'arrA'); drawOne(cvB,8,2,dB,V('--warn'),999,'arrB'); clk.textContent='—'; }
+    else frame();
+    stops.push(() => { if (raf) cancelAnimationFrame(raf); });
+
+    // Histogram + stats
+    function runStats(n){
+      const AA=[], BB=[]; let winA=0;
+      for (let k=0;k<n;k++){ const a=simulate(5,5), b=simulate(8,2); AA.push(a); BB.push(b); if (a<b) winA++; }
+      const mean = arr => arr.reduce((s,v)=>s+v,0)/arr.length;
+      const median = arr => { const s=[...arr].sort((p,q)=>p-q); return s[Math.floor(s.length/2)]; };
+      drawHist(AA, BB);
+      document.getElementById('stats').innerHTML =
+        `<div><span class="dotA"></span><b>(5,5)</b> &nbsp;mean <b>${mean(AA).toFixed(1)}s</b> · median <b>${median(AA)}s</b></div>` +
+        `<div><span class="dotB"></span><b>(8,2)</b> &nbsp;mean <b>${mean(BB).toFixed(1)}s</b> · median <b>${median(BB)}s</b></div>` +
+        `<div style="margin-top:6px">→ <b>(5,5)</b> arrives first in <b>${(winA/n*100).toFixed(0)}%</b> of head-to-head walks, saving <b>${(mean(BB)-mean(AA)).toFixed(1)}s</b> on average.</div>`;
+    }
+    function drawHist(AA, BB){
+      const cv = document.getElementById('hist'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+      const padL = 30, padB = 26, padT = 12, padR = 10;
+      ctx.clearRect(0,0,W,H);
+      const all = AA.concat(BB), lo = Math.floor(Math.min(...all)), hi = Math.ceil(Math.max(...all)), bins = hi-lo+1;
+      const binOf = arr => { const c = new Array(bins).fill(0); arr.forEach(v => c[Math.min(bins-1, Math.round(v)-lo)]++); return c; };
+      const cA = binOf(AA), cB = binOf(BB), maxC = Math.max(...cA, ...cB);
+      const bw = (W-padL-padR)/bins, px = i => padL + i*bw, py = c => H-padB - (c/maxC)*(H-padT-padB);
+      ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
+      ctx.fillStyle = V('--faint'); ctx.font = '11px ' + V('--mono'); ctx.textAlign = 'center';
+      for (let i=0;i<bins;i+=Math.ceil(bins/8)) ctx.fillText((lo+i)+'s', px(i)+bw/2, H-padB+14);
+      const bars = (c,color,a) => { ctx.globalAlpha=a; ctx.fillStyle=color; for (let i=0;i<bins;i++){ if(!c[i]) continue; ctx.fillRect(px(i)+1, py(c[i]), bw-2, (H-padB)-py(c[i])); } ctx.globalAlpha=1; };
+      bars(cB, V('--warn'), .6); bars(cA, V('--accent'), .72);
+    }
+    document.getElementById('runBtn').addEventListener('click', () => runStats(1000));
+    runStats(1000);
+
+    return () => stops.forEach(fn => fn());
+  }
+
+  /* ---------------- Tennis post init ---------------- */
+  function tennisInit() {
+    const cv = document.getElementById('tennis'); if (!cv) return null;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, floor = H - 26;
+    let x, y, vx, vy, trail, raf = null;
+    function reset(){ x=34; y=40; vx=3.0; vy=0; trail=[]; }
+    reset();
+    function frame(){
+      const accent = V('--accent'), line = V('--line'), faint = V('--faint'), ground = V('--ground');
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(0,floor+12); ctx.lineTo(W,floor+12); ctx.stroke();
+      vy += 0.35; x += vx; y += vy;
+      if (y > floor) { y = floor; vy *= -0.74; if (Math.abs(vy) < 1) vy = 0; }
+      if (x > W-34) reset();
+      trail.push([x,y]); if (trail.length > 42) trail.shift();
+      trail.forEach((p,k) => { ctx.globalAlpha = (k/trail.length)*0.5; ctx.fillStyle = faint; ctx.beginPath(); ctx.arc(p[0],p[1],2,0,7); ctx.fill(); });
+      ctx.globalAlpha = 1; ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(x,y,7,0,7); ctx.fill();
+      ctx.strokeStyle = ground; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(x,y,7,-0.6,0.9); ctx.stroke();
+      if (!reduce) raf = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }
+</script>
+
+</body>
+</html>
