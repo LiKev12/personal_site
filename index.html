@@ -442,7 +442,7 @@
         0 to 2 depending on when you arrive. The only honest way to settle it is to simulate: run 1,000 walks to each
         target and the freedom advantage is clear — <strong>(5,5) wins</strong>.</p>
         <div class="sim">
-          <figure style="margin:0"><canvas id="histEq" width="680" height="200"></canvas><figcaption>arrival times · fair, independent lights</figcaption></figure>
+          <figure style="margin:0"><canvas id="histEq" width="680" height="200"></canvas><figcaption>fair lights · each bar = how many of 1,000 walks finished at that time · further left is faster</figcaption></figure>
           <div class="stats" id="statsEq"></div>
         </div>
 
@@ -463,7 +463,7 @@
         <div class="simcap"><span><span class="dotA"></span>(5,5) arrived <b id="wva">0</b>/12</span><span><span class="dotB"></span>(8,2) arrived <b id="wvb">0</b>/12</span></div>
         <p>Same 1,000-walk simulation, now with the wave — and the result flips: <strong>(8,2) wins</strong>.</p>
         <div class="sim">
-          <figure style="margin:0"><canvas id="histWave" width="680" height="200"></canvas><figcaption>arrival times · coordinated east arterial</figcaption></figure>
+          <figure style="margin:0"><canvas id="histWave" width="680" height="200"></canvas><figcaption>green wave · each bar = how many of 1,000 walks finished at that time · further left is faster</figcaption></figure>
           <div class="stats" id="statsWave"></div>
         </div>
 
@@ -541,17 +541,30 @@
 
     function drawHist(id, AA, BB){
       const cv = document.getElementById(id); if (!cv) return;
-      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, padL=30, padB=26, padT=12, padR=10;
+      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, padL=16, padB=28, padT=32, padR=14;
       ctx.clearRect(0,0,W,H);
       const all = AA.concat(BB), lo = Math.floor(Math.min(...all)), hi = Math.ceil(Math.max(...all)), bins = Math.max(1, hi-lo+1);
       const binOf = a => { const c = new Array(bins).fill(0); a.forEach(v => c[Math.min(bins-1, Math.round(v)-lo)]++); return c; };
       const cA = binOf(AA), cB = binOf(BB), maxC = Math.max(...cA, ...cB, 1);
       const bw = (W-padL-padR)/bins, px = i => padL+i*bw, py = c => H-padB - (c/maxC)*(H-padT-padB);
+      // baseline
       ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
+      // side-by-side bars per time bucket: (5,5) on the left, (8,2) on the right — no overlap
+      const gp = Math.max(0.5, bw*0.14), half = Math.max(1, (bw-gp*3)/2);
+      for (let i=0;i<bins;i++){
+        if (cA[i]) { ctx.fillStyle = V('--accent'); ctx.fillRect(px(i)+gp,          py(cA[i]), half, (H-padB)-py(cA[i])); }
+        if (cB[i]) { ctx.fillStyle = V('--warn');   ctx.fillRect(px(i)+gp*2+half,   py(cB[i]), half, (H-padB)-py(cB[i])); }
+      }
+      // x-axis ticks (seconds)
       ctx.fillStyle = V('--faint'); ctx.font = '11px ' + V('--mono'); ctx.textAlign = 'center';
-      for (let i=0;i<bins;i+=Math.ceil(bins/8)) ctx.fillText((lo+i)+'s', px(i)+bw/2, H-padB+14);
-      const bars = (c,color,a) => { ctx.globalAlpha=a; ctx.fillStyle=color; for (let i=0;i<bins;i++){ if(!c[i]) continue; ctx.fillRect(px(i)+1, py(c[i]), bw-2, (H-padB)-py(c[i])); } ctx.globalAlpha=1; };
-      bars(cB, V('--warn'), .6); bars(cA, V('--accent'), .72);
+      for (let i=0;i<bins;i+=Math.ceil(bins/8)) ctx.fillText((lo+i)+'s', px(i)+bw/2, H-padB+15);
+      // legend (top-left)
+      let lx = padL; const ly = 16;
+      [ ['to (5,5)', V('--accent')], ['to (8,2)', V('--warn')] ].forEach(([label,color]) => {
+        ctx.fillStyle = color; ctx.fillRect(lx, ly-9, 11, 11);
+        ctx.fillStyle = V('--muted'); ctx.font = '12px ' + V('--mono'); ctx.textAlign = 'left';
+        ctx.fillText(label, lx+16, ly+1); lx += 16 + ctx.measureText(label).width + 20;
+      });
     }
     function writeStats(elId, AA, BB, winner){
       let win=0; for (let i=0;i<AA.length;i++){ if (winner==='A' ? AA[i]<BB[i] : BB[i]<AA[i]) win++; }
