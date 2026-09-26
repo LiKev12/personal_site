@@ -445,7 +445,8 @@
         0 to 2 depending on when you arrive. The only honest way to settle it is to simulate: run 1,000 walks to each
         target and the freedom advantage is clear — <strong>(5,5) wins</strong>.</p>
         <div class="sim">
-          <figure style="margin:0"><canvas id="histEq" width="680" height="200"></canvas><figcaption>fair lights · each bar = how many of 1,000 walks finished at that time · further left is faster</figcaption></figure>
+          <figure style="margin:0"><canvas id="histEq" width="680" height="200"></canvas><figcaption>fair lights · how many of 1,000 walks finished at each time · further left is faster</figcaption></figure>
+          <figure style="margin:16px 0 0"><canvas id="barEq" width="680" height="150"></canvas><figcaption>fair lights · mean arrival time · lower is faster</figcaption></figure>
           <div class="stats" id="statsEq"></div>
           <div class="simbar"><button class="runbtn">Re-run both simulations ↻</button></div>
         </div>
@@ -467,15 +468,9 @@
         <div class="simcap"><span><span class="dotA"></span>(5,5) arrived <b id="wva">0</b>/12</span><span><span class="dotB"></span>(8,2) arrived <b id="wvb">0</b>/12</span></div>
         <p>Same 1,000-walk simulation, now with the wave — and the result flips: <strong>(8,2) wins</strong>.</p>
         <div class="sim">
-          <figure style="margin:0"><canvas id="histWave" width="680" height="200"></canvas><figcaption>green wave · each bar = how many of 1,000 walks finished at that time · further left is faster</figcaption></figure>
+          <figure style="margin:0"><canvas id="histWave" width="680" height="200"></canvas><figcaption>green wave · how many of 1,000 walks finished at each time · further left is faster</figcaption></figure>
+          <figure style="margin:16px 0 0"><canvas id="barWave" width="680" height="150"></canvas><figcaption>green wave · mean arrival time · lower is faster</figcaption></figure>
           <div class="stats" id="statsWave"></div>
-        </div>
-
-        <p>So which friend is really closer? It depends entirely on the city. Put the two worlds side by side — same
-        walkers, same ten blocks, only the light rules change:</p>
-        <div class="sim">
-          <figure style="margin:0"><canvas id="histCmp" width="680" height="260"></canvas><figcaption>mean arrival time · lower is faster</figcaption></figure>
-          <div class="stats" id="statsCmp"></div>
           <div class="simbar"><button class="runbtn">Re-run both simulations ↻</button></div>
         </div>
 
@@ -580,34 +575,26 @@
         `<div style="margin-top:6px">→ <b>${fast}</b> arrives first in <b>${(win/AA.length*100).toFixed(0)}%</b> of head-to-head walks, by <b>${gap}s</b> on average.</div>`;
       return { mA, mB };
     }
-    function drawCompare(id, d){
+    function drawBars(id, aVal, bVal){
       const cv = document.getElementById(id); if (!cv) return;
-      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, padL=16, padB=40, padT=22, padR=16;
+      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, padB=30, padT=24, padL=16, padR=16;
       ctx.clearRect(0,0,W,H);
-      const groups = [ {label:'Fair lights', a:d.eqA, b:d.eqB}, {label:'Green wave', a:d.wvA, b:d.wvB} ];
-      const maxV = Math.max(d.eqA,d.eqB,d.wvA,d.wvB)*1.18, plotH = H-padT-padB, gy = v => H-padB - (v/maxV)*plotH;
+      const maxV = Math.max(aVal, bVal)*1.2, plotH = H-padT-padB, gy = v => H-padB - (v/maxV)*plotH;
       ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
-      const gw = (W-padL-padR)/groups.length, bw = Math.min(70, gw*0.24);
-      groups.forEach((g,gi) => {
-        const cx = padL + gw*gi + gw/2;
-        [ {v:g.a,c:V('--c55')}, {v:g.b,c:V('--c82')} ].forEach((val,vi) => {
-          const bx = cx + (vi===0 ? -bw-5 : 5), by = gy(val.v);
-          ctx.fillStyle = val.c; ctx.fillRect(bx, by, bw, (H-padB)-by);
-          ctx.fillStyle = V('--ink'); ctx.font = '600 12px ' + V('--mono'); ctx.textAlign = 'center'; ctx.fillText(val.v.toFixed(1)+'s', bx+bw/2, by-6);
-        });
-        ctx.fillStyle = V('--muted'); ctx.font = '13px ' + V('--sans'); ctx.textAlign = 'center'; ctx.fillText(g.label, cx, H-padB+22);
+      const bars = [ {v:aVal, c:V('--c55'), label:'(5,5)'}, {v:bVal, c:V('--c82'), label:'(8,2)'} ];
+      const bw = 76, gap = 46, totalW = bars.length*bw + (bars.length-1)*gap, startX = (W-totalW)/2;
+      bars.forEach((bar,i) => {
+        const bx = startX + i*(bw+gap), by = gy(bar.v);
+        ctx.fillStyle = bar.c; ctx.fillRect(bx, by, bw, (H-padB)-by);
+        ctx.fillStyle = V('--ink'); ctx.font = '600 13px ' + V('--mono'); ctx.textAlign = 'center'; ctx.fillText(bar.v.toFixed(1)+'s', bx+bw/2, by-7);
+        ctx.fillStyle = V('--muted'); ctx.font = '12px ' + V('--mono'); ctx.fillText(bar.label, bx+bw/2, H-padB+18);
       });
     }
     function runAll(){
       const n = 1000, eqA=[], eqB=[], wvA=[], wvB=[];
       for (let k=0;k<n;k++){ eqA.push(simulate(5,5)); eqB.push(simulate(8,2)); wvA.push(simulateWave(5,5)); wvB.push(simulateWave(8,2)); }
-      drawHist('histEq', eqA, eqB);   const se = writeStats('statsEq', eqA, eqB, 'A');
-      drawHist('histWave', wvA, wvB); const sw = writeStats('statsWave', wvA, wvB, 'B');
-      drawCompare('histCmp', { eqA:se.mA, eqB:se.mB, wvA:sw.mA, wvB:sw.mB });
-      const el = document.getElementById('statsCmp');
-      if (el) el.innerHTML =
-        `<div><span class="dotA"></span>(5,5)&nbsp;&nbsp;<span class="dotB"></span>(8,2)</div>` +
-        `<div style="margin-top:6px">Fair lights → <b>(5,5)</b> faster by <b>${(se.mB-se.mA).toFixed(1)}s</b>. &nbsp; Green wave → <b>(8,2)</b> faster by <b>${(sw.mA-sw.mB).toFixed(1)}s</b>.</div>`;
+      drawHist('histEq', eqA, eqB);   const se = writeStats('statsEq', eqA, eqB, 'A'); drawBars('barEq', se.mA, se.mB);
+      drawHist('histWave', wvA, wvB); const sw = writeStats('statsWave', wvA, wvB, 'B'); drawBars('barWave', sw.mA, sw.mB);
     }
     document.querySelectorAll('.runbtn').forEach(b => b.addEventListener('click', runAll));
     runAll();
