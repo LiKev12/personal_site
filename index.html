@@ -142,6 +142,11 @@
   .stats .dotA { background: var(--accent); }
   .stats .dotB { background: var(--warn); }
   .stats b { color: var(--ink); }
+  .simcap { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 6px 2px 0; }
+  .simcap b { color: var(--ink); }
+  .simcap .dotA, .simcap .dotB { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .simcap .dotA { background: var(--accent); }
+  .simcap .dotB { background: var(--warn); }
 
   /* ---------- Mobile ---------- */
   @media (max-width: 720px) {
@@ -279,7 +284,7 @@
   /* ==================== GRID-WALK: model + sim ====================
      10 m blocks · walk 10 m/s (1 s/block) · lights alternate green 10 s
      each way, independent random phase per intersection.  */
-  const T = 10;
+  const T = 2;
   function makePhases(tx, ty) { const p = []; for (let i=0;i<=tx;i++){ p[i]=[]; for (let j=0;j<=ty;j++) p[i][j]=Math.random()*2*T; } return p; }
   function eastGreen(ph,x,y,t){ const c=((t+ph[x][y])%(2*T)+2*T)%(2*T); return c<T; }
   function waitEast(ph,x,y,t){ const c=((t+ph[x][y])%(2*T)+2*T)%(2*T); return c<T?0:2*T-c; }
@@ -310,6 +315,42 @@
     while (x<tx || y<ty) { const e=x<tx, n=y<ty; if (e&&n) { if (Math.random()<0.5) x++; else y++; } else if (e) x++; else y++; t+=1; path.push({t,x,y}); }
     return { time: t, path };
   }
+
+  // ---- green-wave model: east arterial is coordinated (ride it wait-free at pace);
+  //      north cross-streets stay independent, so only turning off the avenue costs time ----
+  const TAU = 1; // green-wave offset per east block (tuned to the walker's pace)
+  function eastGW(x,t){ const c=((t - x*TAU)%(2*T)+2*T)%(2*T); return c<T; }
+  function waitEastGW(x,t){ const c=((t - x*TAU)%(2*T)+2*T)%(2*T); return c<T?0:2*T-c; }
+  function northGW(ph,x,y,t){ const c=((t+ph[x][y])%(2*T)+2*T)%(2*T); return c<T; }
+  function waitNorthGW(ph,x,y,t){ const c=((t+ph[x][y])%(2*T)+2*T)%(2*T); return c<T?0:2*T-c; }
+  function simulateWave(tx, ty){
+    const ph=makePhases(tx,ty); let x=0,y=0,t=0;
+    while (x<tx || y<ty){
+      const e=x<tx, n=y<ty;
+      if (e && n){
+        if (eastGW(x,t)) { x++; t+=1; }
+        else if (northGW(ph,x,y,t)) { y++; t+=1; }
+        else { const we=waitEastGW(x,t), wn=waitNorthGW(ph,x,y,t); if (we<=wn){ t+=we; x++; t+=1; } else { t+=wn; y++; t+=1; } }
+      } else if (e){ t+=waitEastGW(x,t); x++; t+=1; }
+      else { t+=waitNorthGW(ph,x,y,t); y++; t+=1; }
+    }
+    return t;
+  }
+  function simulateWaveRecord(tx, ty){
+    const ph=makePhases(tx,ty); let x=0,y=0,t=0; const path=[{t:0,x:0,y:0}];
+    const goE=()=>{ path.push({t,x,y}); x++; t+=1; path.push({t,x,y}); };
+    const goN=()=>{ path.push({t,x,y}); y++; t+=1; path.push({t,x,y}); };
+    while (x<tx || y<ty){
+      const e=x<tx, n=y<ty;
+      if (e && n){
+        if (eastGW(x,t)) goE();
+        else if (northGW(ph,x,y,t)) goN();
+        else { const we=waitEastGW(x,t), wn=waitNorthGW(ph,x,y,t); if (we<=wn){ t+=we; goE(); } else { t+=wn; goN(); } }
+      } else if (e){ t+=waitEastGW(x,t); goE(); }
+      else { t+=waitNorthGW(ph,x,y,t); goN(); }
+    }
+    return { time:t, path };
+  }
   function posAt(path, ts) {
     if (ts <= 0) return { x: path[0].x, y: path[0].y };
     for (let i=0;i<path.length-1;i++){ const a=path[i], b=path[i+1]; if (ts>=a.t && ts<=b.t){ const f=b.t===a.t?1:(ts-a.t)/(b.t-a.t); return { x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f }; } }
@@ -339,7 +380,7 @@
     const cv = document.getElementById(id); if (!cv) return () => {};
     const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const K = cfg.K || 10, speed = cfg.speed || 4.5, mk = cfg.mode==='lights' ? simulateRecord : simulateNoLights;
+    const K = cfg.K || 10, speed = cfg.speed || 4.5, mk = cfg.mode==='wave' ? simulateWaveRecord : cfg.mode==='lights' ? simulateRecord : simulateNoLights;
     let groups, t0, raf = null;
     function seed(){ groups = cfg.targets.map(tg => ({ tg, dots: Array.from({length:K}, () => mk(tg.tx,tg.ty)) })); t0 = performance.now(); }
     function draw(ts){
@@ -374,7 +415,7 @@
       init: gridWalkInit,
       body: `
         <h1>Grid-walk: a thought experiment (and maybe an interview question)</h1>
-        <div class="meta">September 20, 2026 · 5 min read</div>
+        <div class="meta">September 20, 2026 · 10 min read</div>
         <p>You're standing at a corner in Manhattan — call it <code>(0,0)</code> — on a clean 10×10 grid of blocks.
         You can only walk along sidewalks: north, south, east, west. No cutting diagonally through buildings.</p>
         <p>Two friends are waiting. One is at <code>(5,5)</code>, the other at <code>(8,2)</code>. Both are exactly
@@ -385,55 +426,64 @@
         arrive at the same time. With no lights to worry about, that's exactly right — watch both packs land together:</p>
         <figure><canvas id="walk1" width="500" height="500"></canvas><figcaption>no lights · every walker covers 10 blocks and arrives at the same instant — a genuine tie</figcaption></figure>
 
-        <h2>Intuition 2 — "Wait, it's a city"</h2>
-        <p>Blocks aren't free. At every corner there's a light. Here's the key idea: at a corner where <em>both</em>
-        remaining directions still make progress, a red light costs you nothing — you just take the green one and keep
-        moving. You only ever <em>wait</em> once you're pinned to a single direction.</p>
-        <p>That's where <code>(5,5)</code> pulls ahead. A balanced target keeps you in the shaded "free zone" for almost
-        the whole trip. <code>(8,2)</code> forces you up to your ceiling after two blocks, then marches you down the
-        orange corridor where every red light is dead time. The number of shortest routes captures the freedom exactly:
+        <h2>Intuition 2 — "It's a city: freedom wins"</h2>
+        <p>Blocks aren't free — at every corner there's a light. Keep the numbers simple: each block is <code>1 m</code>,
+        you walk <code>1 m/s</code> (one second per block), and each light is green <code>2 s</code> for east, then
+        <code>2 s</code> for north, alternating, with a random offset at each intersection. No direction is privileged;
+        an "up" block and a "right" block cost the same on average.</p>
+        <p>The trick is that a red light only hurts when you're <em>forced</em> to take it. At a corner where both
+        directions still make progress, you just take whichever is green — so the real question is how long you keep that
+        freedom. A balanced target keeps both options alive almost the whole way; <code>(8,2)</code> pins you to a single
+        eastward corridor after two blocks, where every red is dead time. Counting routes says the same:
         <code>C(10,5)=252</code> ways to reach <code>(5,5)</code> versus only <code>C(10,2)=45</code> for <code>(8,2)</code>.</p>
-        <figure><canvas id="walk2" width="500" height="500"></canvas><figcaption>same walkers, now with lights · magenta stays free longer; orange gets trapped in the forced corridor</figcaption></figure>
+        <figure><canvas id="walk2" width="500" height="500"></canvas><figcaption>fair lights · magenta stays free longer, orange gets trapped in the orange corridor</figcaption></figure>
+        <div class="simcap"><span><span class="dotA"></span>(5,5) arrived <b id="w2a">0</b>/12</span><span><span class="dotB"></span>(8,2) arrived <b id="w2b">0</b>/12</span></div>
+        <p>And how much does a red actually cost? Not a flat 2 seconds — whatever's left until your green, anywhere from
+        0 to 2 depending on when you arrive. The only honest way to settle it is to simulate: run 1,000 walks to each
+        target and the freedom advantage is clear — <strong>(5,5) wins</strong>.</p>
+        <div class="sim">
+          <figure style="margin:0"><canvas id="histEq" width="680" height="200"></canvas><figcaption>arrival times · fair, independent lights</figcaption></figure>
+          <div class="stats" id="statsEq"></div>
+        </div>
 
+        <h2>Intuition 3 — "But real avenues have a green wave"</h2>
         <aside class="callout"><b class="tag">fact-check · the "green wave"</b>
           Signal progression — the "green wave" — times consecutive lights so travel at one design speed catches greens in
           a row. NYC DOT has rolled it out along Manhattan avenues, starting on Third Avenue and expanding to First, Second,
-          and Eighth, tuned to about <strong>15 mph — notably for cyclists, not cars</strong>, with the whole corridor sharing
-          one cycle length and a per-intersection offset. So your hunch is real. But a green wave rewards going <em>straight</em>
-          along the coordinated avenue, which here favors the straighter <code>(8,2)</code>, and it's tuned to one speed and
-          mode, not a pedestrian on a Walk phase. It's a genuine competing effect — so the model below assumes symmetric,
-          independent lights to isolate the freedom argument.
+          and Eighth, tuned to about <strong>15 mph — notably for cyclists, not cars</strong>, with the whole corridor
+          sharing one cycle length and a per-intersection offset. So your hunch is real: on a coordinated arterial, going
+          straight really is faster.
           <div class="src">sources: <a href="https://en.wikipedia.org/wiki/Green_wave" target="_blank" rel="noopener">Wikipedia — Green wave</a> · <a href="https://www.nyc.gov/html/dot/html/pr2026/nyc-dot-to-install-green-wave-signal-timing.shtml" target="_blank" rel="noopener">NYC DOT (2026)</a></div>
         </aside>
-
-        <h2>Intuition 3 — "The wait isn't always 10 seconds"</h2>
-        <p>Here's the piece the first two glossed over: a red light doesn't cost a flat 10 seconds. It costs whatever's left
-        until your green — anywhere from 0 (you arrive as it turns) to the full 10 (you just missed it), depending on timing.
-        Average that over every forced corner, across many walks, and the only honest way to settle it is to simulate.</p>
-        <p>Assumptions, kept simple: each block is <code>10 m</code>, you walk <code>10 m/s</code> (1 s/block), and every light
-        is green <code>10 s</code> one way then <code>10 s</code> the other, with a random offset per intersection. A greedy
-        walker takes any green that makes progress and only waits when cornered. Each dot is one such walker.</p>
+        <p>So change one rule: make the east direction a coordinated arterial. Keep heading east at pace and you ride a
+        chain of greens with no waiting; the north cross-streets stay independent and uncoordinated. Now <em>commitment</em>
+        to the avenue is what pays — and the straighter route reaps more of it. <code>(8,2)</code> only has to turn off the
+        arterial twice, while <code>(5,5)</code> peels off north five times, waiting each time.</p>
+        <figure><canvas id="walkWave" width="500" height="500"></canvas><figcaption>green wave on the east arterial · orange rides it almost the whole way, magenta keeps peeling off north</figcaption></figure>
+        <div class="simcap"><span><span class="dotA"></span>(5,5) arrived <b id="wva">0</b>/12</span><span><span class="dotB"></span>(8,2) arrived <b id="wvb">0</b>/12</span></div>
+        <p>Same 1,000-walk simulation, now with the wave — and the result flips: <strong>(8,2) wins</strong>.</p>
         <div class="sim">
-          <div class="race">
-            <div><canvas id="raceA" width="320" height="320"></canvas><div class="cap"><span>to <b>(5,5)</b></span><span>arrived <b id="arrA">0</b>/12</span></div></div>
-            <div><canvas id="raceB" width="320" height="320"></canvas><div class="cap"><span>to <b>(8,2)</b></span><span>arrived <b id="arrB">0</b>/12</span></div></div>
-          </div>
-          <div class="simbar">
-            <button class="runbtn" id="runBtn">Run 1,000 walks each ↻</button>
-            <span class="clock">sim clock · <b id="clk">0.0</b>s</span>
-          </div>
-          <figure style="margin:8px 0 0"><canvas id="hist" width="680" height="220"></canvas><figcaption>arrival-time distribution over 1,000 simulated walks each</figcaption></figure>
-          <div class="stats" id="stats"></div>
+          <figure style="margin:0"><canvas id="histWave" width="680" height="200"></canvas><figcaption>arrival times · coordinated east arterial</figcaption></figure>
+          <div class="stats" id="statsWave"></div>
+        </div>
+
+        <p>So which friend is really closer? It depends entirely on the city. Put the two worlds side by side — same
+        walkers, same ten blocks, only the light rules change:</p>
+        <div class="sim">
+          <figure style="margin:0"><canvas id="histCmp" width="680" height="260"></canvas><figcaption>mean arrival time · lower is faster</figcaption></figure>
+          <div class="stats" id="statsCmp"></div>
+          <div class="simbar"><button class="runbtn" id="runBtn">Re-run all simulations ↻</button></div>
         </div>
 
         <h2>The takeaway</h2>
-        <p>Pure theory says it's a tie — 10 blocks either way. Add one real-world detail, traffic lights, and the symmetry
-        breaks: the balanced target wins because balance buys you <em>options</em>, and options let you route around red
-        lights. The straighter target trades those options for a corridor of forced waits. That gap — between the
-        distance-only answer and the with-constraints answer — is the whole point. Theory meets practice at the intersection.
-        Literally.</p>
-        <p class="note">On a real site this simulation would be its own component dropped into the Markdown; here it's inline
-        just to prove the interactive-post idea works. Numbers regenerate each run, so they'll wiggle a little.</p>`
+        <p>Pure distance says it's a tie. The moment you add traffic lights, the answer stops being about distance and
+        starts being about <em>which rule the city plays by</em>. Fair, independent lights reward <em>options</em>, so the
+        balanced <code>(5,5)</code> wins. A green wave rewards <em>commitment</em> to the arterial, so the straighter
+        <code>(8,2)</code> wins. Real cities sit somewhere between: waves exist, but they're tuned to ~15 mph cyclists, not
+        your stride, so you only partly ride them. Theory meets practice at the intersection — and practice, it turns out,
+        depends on the intersection.</p>
+        <p class="note">Each simulation is its own small model with deliberately simple assumptions; on a real site each
+        would be its own component dropped into the Markdown. Numbers regenerate every run, so they'll wiggle a little.</p>`
     },
     {
       date: '2026 · 09 · 05',
@@ -471,75 +521,79 @@
     const stops = [];
     const A = V('--accent'), B = V('--warn');
 
+    // Intuition 1: no lights (tie).  Intuition 2: fair lights (freedom).  Intuition 3: green wave.
     stops.push(animateWalk('walk1', {
-      mode: 'nolights',
+      mode: 'nolights', K: 12,
       targets: [ { tx:5,ty:5, color:A, name:'(5,5)' }, { tx:8,ty:2, color:B, name:'(8,2)' } ]
     }));
     stops.push(animateWalk('walk2', {
-      mode: 'lights',
+      mode: 'lights', K: 12,
       shades: [ { x0:0,y0:0,x1:5,y1:5, fill:V('--accent-soft') }, { x0:2,y0:1.6,x1:8,y1:2.4, fill:V('--warn-soft') } ],
-      targets: [ { tx:5,ty:5, color:A, name:'(5,5)' }, { tx:8,ty:2, color:B, name:'(8,2)' } ]
+      targets: [ { tx:5,ty:5, color:A, name:'(5,5)', counter:'w2a' }, { tx:8,ty:2, color:B, name:'(8,2)', counter:'w2b' } ]
+    }));
+    stops.push(animateWalk('walkWave', {
+      mode: 'wave', K: 12,
+      targets: [ { tx:5,ty:5, color:A, name:'(5,5)', counter:'wva' }, { tx:8,ty:2, color:B, name:'(8,2)', counter:'wvb' } ]
     }));
 
-    // Intuition 3 race (two 10x10 grids, one clock)
-    const cvA = document.getElementById('raceA'), cvB = document.getElementById('raceB');
-    const clk = document.getElementById('clk'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const K = 12, speed = 4.5;
-    let dA, dB, t0, raf = null;
-    function seed(){ dA = Array.from({length:K}, () => simulateRecord(5,5)); dB = Array.from({length:K}, () => simulateRecord(8,2)); t0 = performance.now(); }
-    function drawOne(cv, tx, ty, dots, color, ts, counter){
-      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-      const { sx, sy } = drawGrid(ctx, W, H);
-      drawTarget(ctx, sx, sy, tx, ty, color);
-      ctx.fillStyle = V('--ink'); ctx.beginPath(); ctx.arc(sx(0),sy(0),4,0,7); ctx.fill();
-      drawLabel(ctx, W, H, sx(0), sy(0), 'start', V('--muted'));
-      drawLabel(ctx, W, H, sx(tx), sy(ty), '('+tx+','+ty+')', color);
-      let arr = 0;
-      dots.forEach(d => { const p = posAt(d.path, ts); const done = ts>=d.time; if (done) arr++; ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),4,0,7); ctx.fillStyle = color; ctx.globalAlpha = done?1:.5; ctx.fill(); ctx.globalAlpha = 1; });
-      document.getElementById(counter).textContent = arr;
-    }
-    function frame(){
-      const ts = (performance.now()-t0)/1000*speed;
-      drawOne(cvA, 5,5, dA, V('--accent'), ts, 'arrA');
-      drawOne(cvB, 8,2, dB, V('--warn'), ts, 'arrB');
-      clk.textContent = ts.toFixed(1);
-      const maxT = Math.max(...dA.map(d=>d.time), ...dB.map(d=>d.time));
-      if (ts > maxT + 2.5) seed();
-      raf = requestAnimationFrame(frame);
-    }
-    seed();
-    if (reduce) { drawOne(cvA,5,5,dA,V('--accent'),999,'arrA'); drawOne(cvB,8,2,dB,V('--warn'),999,'arrB'); clk.textContent='—'; }
-    else frame();
-    stops.push(() => { if (raf) cancelAnimationFrame(raf); });
+    const mean = a => a.reduce((s,v)=>s+v,0)/a.length;
+    const median = a => { const s=[...a].sort((p,q)=>p-q); return s[Math.floor(s.length/2)]; };
 
-    // Histogram + stats
-    function runStats(n){
-      const AA=[], BB=[]; let winA=0;
-      for (let k=0;k<n;k++){ const a=simulate(5,5), b=simulate(8,2); AA.push(a); BB.push(b); if (a<b) winA++; }
-      const mean = arr => arr.reduce((s,v)=>s+v,0)/arr.length;
-      const median = arr => { const s=[...arr].sort((p,q)=>p-q); return s[Math.floor(s.length/2)]; };
-      drawHist(AA, BB);
-      document.getElementById('stats').innerHTML =
-        `<div><span class="dotA"></span><b>(5,5)</b> &nbsp;mean <b>${mean(AA).toFixed(1)}s</b> · median <b>${median(AA)}s</b></div>` +
-        `<div><span class="dotB"></span><b>(8,2)</b> &nbsp;mean <b>${mean(BB).toFixed(1)}s</b> · median <b>${median(BB)}s</b></div>` +
-        `<div style="margin-top:6px">→ <b>(5,5)</b> arrives first in <b>${(winA/n*100).toFixed(0)}%</b> of head-to-head walks, saving <b>${(mean(BB)-mean(AA)).toFixed(1)}s</b> on average.</div>`;
-    }
-    function drawHist(AA, BB){
-      const cv = document.getElementById('hist'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-      const padL = 30, padB = 26, padT = 12, padR = 10;
+    function drawHist(id, AA, BB){
+      const cv = document.getElementById(id); if (!cv) return;
+      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, padL=30, padB=26, padT=12, padR=10;
       ctx.clearRect(0,0,W,H);
-      const all = AA.concat(BB), lo = Math.floor(Math.min(...all)), hi = Math.ceil(Math.max(...all)), bins = hi-lo+1;
-      const binOf = arr => { const c = new Array(bins).fill(0); arr.forEach(v => c[Math.min(bins-1, Math.round(v)-lo)]++); return c; };
-      const cA = binOf(AA), cB = binOf(BB), maxC = Math.max(...cA, ...cB);
-      const bw = (W-padL-padR)/bins, px = i => padL + i*bw, py = c => H-padB - (c/maxC)*(H-padT-padB);
+      const all = AA.concat(BB), lo = Math.floor(Math.min(...all)), hi = Math.ceil(Math.max(...all)), bins = Math.max(1, hi-lo+1);
+      const binOf = a => { const c = new Array(bins).fill(0); a.forEach(v => c[Math.min(bins-1, Math.round(v)-lo)]++); return c; };
+      const cA = binOf(AA), cB = binOf(BB), maxC = Math.max(...cA, ...cB, 1);
+      const bw = (W-padL-padR)/bins, px = i => padL+i*bw, py = c => H-padB - (c/maxC)*(H-padT-padB);
       ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
       ctx.fillStyle = V('--faint'); ctx.font = '11px ' + V('--mono'); ctx.textAlign = 'center';
       for (let i=0;i<bins;i+=Math.ceil(bins/8)) ctx.fillText((lo+i)+'s', px(i)+bw/2, H-padB+14);
       const bars = (c,color,a) => { ctx.globalAlpha=a; ctx.fillStyle=color; for (let i=0;i<bins;i++){ if(!c[i]) continue; ctx.fillRect(px(i)+1, py(c[i]), bw-2, (H-padB)-py(c[i])); } ctx.globalAlpha=1; };
       bars(cB, V('--warn'), .6); bars(cA, V('--accent'), .72);
     }
-    document.getElementById('runBtn').addEventListener('click', () => runStats(1000));
-    runStats(1000);
+    function writeStats(elId, AA, BB, winner){
+      let win=0; for (let i=0;i<AA.length;i++){ if (winner==='A' ? AA[i]<BB[i] : BB[i]<AA[i]) win++; }
+      const mA=mean(AA), mB=mean(BB), fast = winner==='A' ? '(5,5)' : '(8,2)', gap = Math.abs(mB-mA).toFixed(1);
+      const el = document.getElementById(elId); if (!el) return { mA, mB };
+      el.innerHTML =
+        `<div><span class="dotA"></span><b>(5,5)</b> mean <b>${mA.toFixed(1)}s</b> · median <b>${median(AA).toFixed(1)}s</b></div>` +
+        `<div><span class="dotB"></span><b>(8,2)</b> mean <b>${mB.toFixed(1)}s</b> · median <b>${median(BB).toFixed(1)}s</b></div>` +
+        `<div style="margin-top:6px">→ <b>${fast}</b> arrives first in <b>${(win/AA.length*100).toFixed(0)}%</b> of head-to-head walks, by <b>${gap}s</b> on average.</div>`;
+      return { mA, mB };
+    }
+    function drawCompare(id, d){
+      const cv = document.getElementById(id); if (!cv) return;
+      const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, padL=16, padB=40, padT=22, padR=16;
+      ctx.clearRect(0,0,W,H);
+      const groups = [ {label:'Fair lights', a:d.eqA, b:d.eqB}, {label:'Green wave', a:d.wvA, b:d.wvB} ];
+      const maxV = Math.max(d.eqA,d.eqB,d.wvA,d.wvB)*1.18, plotH = H-padT-padB, gy = v => H-padB - (v/maxV)*plotH;
+      ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
+      const gw = (W-padL-padR)/groups.length, bw = Math.min(70, gw*0.24);
+      groups.forEach((g,gi) => {
+        const cx = padL + gw*gi + gw/2;
+        [ {v:g.a,c:V('--accent')}, {v:g.b,c:V('--warn')} ].forEach((val,vi) => {
+          const bx = cx + (vi===0 ? -bw-5 : 5), by = gy(val.v);
+          ctx.fillStyle = val.c; ctx.fillRect(bx, by, bw, (H-padB)-by);
+          ctx.fillStyle = V('--ink'); ctx.font = '600 12px ' + V('--mono'); ctx.textAlign = 'center'; ctx.fillText(val.v.toFixed(1)+'s', bx+bw/2, by-6);
+        });
+        ctx.fillStyle = V('--muted'); ctx.font = '13px ' + V('--sans'); ctx.textAlign = 'center'; ctx.fillText(g.label, cx, H-padB+22);
+      });
+    }
+    function runAll(){
+      const n = 1000, eqA=[], eqB=[], wvA=[], wvB=[];
+      for (let k=0;k<n;k++){ eqA.push(simulate(5,5)); eqB.push(simulate(8,2)); wvA.push(simulateWave(5,5)); wvB.push(simulateWave(8,2)); }
+      drawHist('histEq', eqA, eqB);   const se = writeStats('statsEq', eqA, eqB, 'A');
+      drawHist('histWave', wvA, wvB); const sw = writeStats('statsWave', wvA, wvB, 'B');
+      drawCompare('histCmp', { eqA:se.mA, eqB:se.mB, wvA:sw.mA, wvB:sw.mB });
+      const el = document.getElementById('statsCmp');
+      if (el) el.innerHTML =
+        `<div><span class="dotA"></span>(5,5)&nbsp;&nbsp;<span class="dotB"></span>(8,2)</div>` +
+        `<div style="margin-top:6px">Fair lights → <b>(5,5)</b> faster by <b>${(se.mB-se.mA).toFixed(1)}s</b>. &nbsp; Green wave → <b>(8,2)</b> faster by <b>${(sw.mA-sw.mB).toFixed(1)}s</b>.</div>`;
+    }
+    const btn = document.getElementById('runBtn'); if (btn) btn.addEventListener('click', runAll);
+    runAll();
 
     return () => stops.forEach(fn => fn());
   }
