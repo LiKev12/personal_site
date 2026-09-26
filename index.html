@@ -15,6 +15,7 @@
     --ground: #FAF9F6; --panel: #FFFFFF; --ink: #1B1A18; --muted: #6C6A64;
     --faint: #96938B; --line: #E7E4DD; --accent: #BC4A76; --accent-soft: rgba(188,74,118,0.10);
     --warn: #C67B3C; --warn-soft: rgba(198,123,60,0.16);
+    --c55: #BC4A76; --c82: #C9962E; --c82-soft: rgba(201,150,46,0.16); /* chart colors: (5,5) magenta, (8,2) golden amber */
     --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   }
@@ -23,12 +24,14 @@
       --ground: #14130F; --panel: #1C1B17; --ink: #ECEAE3; --muted: #9C988D;
       --faint: #77746B; --line: #2B2924; --accent: #E884A9; --accent-soft: rgba(232,132,169,0.14);
       --warn: #D69A5C; --warn-soft: rgba(214,154,92,0.18);
+      --c55: #E884A9; --c82: #E6B14E; --c82-soft: rgba(230,177,78,0.18);
     }
   }
   :root[data-theme="dark"] {
     --ground: #14130F; --panel: #1C1B17; --ink: #ECEAE3; --muted: #9C988D;
     --faint: #77746B; --line: #2B2924; --accent: #E884A9; --accent-soft: rgba(232,132,169,0.14);
     --warn: #D69A5C; --warn-soft: rgba(214,154,92,0.18);
+    --c55: #E884A9; --c82: #E6B14E; --c82-soft: rgba(230,177,78,0.18);
   }
 
   * { box-sizing: border-box; }
@@ -139,14 +142,14 @@
   .runbtn:hover { filter: brightness(1.05); }
   .stats { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.9; margin-top: 12px; }
   .stats .dotA, .stats .dotB { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-  .stats .dotA { background: var(--accent); }
-  .stats .dotB { background: var(--warn); }
+  .stats .dotA { background: var(--c55); }
+  .stats .dotB { background: var(--c82); }
   .stats b { color: var(--ink); }
   .simcap { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 6px 2px 0; }
   .simcap b { color: var(--ink); }
   .simcap .dotA, .simcap .dotB { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
-  .simcap .dotA { background: var(--accent); }
-  .simcap .dotB { background: var(--warn); }
+  .simcap .dotA { background: var(--c55); }
+  .simcap .dotB { background: var(--c82); }
 
   /* ---------- Mobile ---------- */
   @media (max-width: 720px) {
@@ -444,6 +447,7 @@
         <div class="sim">
           <figure style="margin:0"><canvas id="histEq" width="680" height="200"></canvas><figcaption>fair lights · each bar = how many of 1,000 walks finished at that time · further left is faster</figcaption></figure>
           <div class="stats" id="statsEq"></div>
+          <div class="simbar"><button class="runbtn">Re-run both simulations ↻</button></div>
         </div>
 
         <h2>Intuition 3 — "But real avenues have a green wave"</h2>
@@ -472,7 +476,7 @@
         <div class="sim">
           <figure style="margin:0"><canvas id="histCmp" width="680" height="260"></canvas><figcaption>mean arrival time · lower is faster</figcaption></figure>
           <div class="stats" id="statsCmp"></div>
-          <div class="simbar"><button class="runbtn" id="runBtn">Re-run all simulations ↻</button></div>
+          <div class="simbar"><button class="runbtn">Re-run both simulations ↻</button></div>
         </div>
 
         <h2>The takeaway</h2>
@@ -519,7 +523,7 @@
   /* ---------------- Grid-walk post init ---------------- */
   function gridWalkInit() {
     const stops = [];
-    const A = V('--accent'), B = V('--warn');
+    const A = V('--c55'), B = V('--c82');
 
     // Intuition 1: no lights (tie).  Intuition 2: fair lights (freedom).  Intuition 3: green wave.
     stops.push(animateWalk('walk1', {
@@ -528,7 +532,7 @@
     }));
     stops.push(animateWalk('walk2', {
       mode: 'lights', K: 12,
-      shades: [ { x0:0,y0:0,x1:5,y1:5, fill:V('--accent-soft') }, { x0:2,y0:1.6,x1:8,y1:2.4, fill:V('--warn-soft') } ],
+      shades: [ { x0:0,y0:0,x1:5,y1:5, fill:V('--accent-soft') }, { x0:2,y0:1.6,x1:8,y1:2.4, fill:V('--c82-soft') } ],
       targets: [ { tx:5,ty:5, color:A, name:'(5,5)', counter:'w2a' }, { tx:8,ty:2, color:B, name:'(8,2)', counter:'w2b' } ]
     }));
     stops.push(animateWalk('walkWave', {
@@ -552,15 +556,15 @@
       // side-by-side bars per time bucket: (5,5) on the left, (8,2) on the right — no overlap
       const gp = Math.max(0.5, bw*0.14), half = Math.max(1, (bw-gp*3)/2);
       for (let i=0;i<bins;i++){
-        if (cA[i]) { ctx.fillStyle = V('--accent'); ctx.fillRect(px(i)+gp,          py(cA[i]), half, (H-padB)-py(cA[i])); }
-        if (cB[i]) { ctx.fillStyle = V('--warn');   ctx.fillRect(px(i)+gp*2+half,   py(cB[i]), half, (H-padB)-py(cB[i])); }
+        if (cA[i]) { ctx.fillStyle = V('--c55'); ctx.fillRect(px(i)+gp,          py(cA[i]), half, (H-padB)-py(cA[i])); }
+        if (cB[i]) { ctx.fillStyle = V('--c82'); ctx.fillRect(px(i)+gp*2+half,   py(cB[i]), half, (H-padB)-py(cB[i])); }
       }
       // x-axis ticks (seconds)
       ctx.fillStyle = V('--faint'); ctx.font = '11px ' + V('--mono'); ctx.textAlign = 'center';
       for (let i=0;i<bins;i+=Math.ceil(bins/8)) ctx.fillText((lo+i)+'s', px(i)+bw/2, H-padB+15);
       // legend (top-left)
       let lx = padL; const ly = 16;
-      [ ['to (5,5)', V('--accent')], ['to (8,2)', V('--warn')] ].forEach(([label,color]) => {
+      [ ['to (5,5)', V('--c55')], ['to (8,2)', V('--c82')] ].forEach(([label,color]) => {
         ctx.fillStyle = color; ctx.fillRect(lx, ly-9, 11, 11);
         ctx.fillStyle = V('--muted'); ctx.font = '12px ' + V('--mono'); ctx.textAlign = 'left';
         ctx.fillText(label, lx+16, ly+1); lx += 16 + ctx.measureText(label).width + 20;
@@ -586,7 +590,7 @@
       const gw = (W-padL-padR)/groups.length, bw = Math.min(70, gw*0.24);
       groups.forEach((g,gi) => {
         const cx = padL + gw*gi + gw/2;
-        [ {v:g.a,c:V('--accent')}, {v:g.b,c:V('--warn')} ].forEach((val,vi) => {
+        [ {v:g.a,c:V('--c55')}, {v:g.b,c:V('--c82')} ].forEach((val,vi) => {
           const bx = cx + (vi===0 ? -bw-5 : 5), by = gy(val.v);
           ctx.fillStyle = val.c; ctx.fillRect(bx, by, bw, (H-padB)-by);
           ctx.fillStyle = V('--ink'); ctx.font = '600 12px ' + V('--mono'); ctx.textAlign = 'center'; ctx.fillText(val.v.toFixed(1)+'s', bx+bw/2, by-6);
@@ -605,7 +609,7 @@
         `<div><span class="dotA"></span>(5,5)&nbsp;&nbsp;<span class="dotB"></span>(8,2)</div>` +
         `<div style="margin-top:6px">Fair lights → <b>(5,5)</b> faster by <b>${(se.mB-se.mA).toFixed(1)}s</b>. &nbsp; Green wave → <b>(8,2)</b> faster by <b>${(sw.mA-sw.mB).toFixed(1)}s</b>.</div>`;
     }
-    const btn = document.getElementById('runBtn'); if (btn) btn.addEventListener('click', runAll);
+    document.querySelectorAll('.runbtn').forEach(b => b.addEventListener('click', runAll));
     runAll();
 
     return () => stops.forEach(fn => fn());
