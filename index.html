@@ -146,7 +146,8 @@
   .clock b { color: var(--accent); }
   .runbtn { font-family: var(--mono); font-size: 12.5px; background: var(--accent); color: #fff; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
   .runbtn:hover { filter: brightness(1.05); }
-  .segbtns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .segbtns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .seglabel { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-right: 2px; }
   .segbtn { font-family: var(--mono); font-size: 12.5px; background: none; border: 1px solid var(--line); color: var(--muted); padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
   .segbtn:hover { color: var(--ink); }
   .segbtn.active { color: var(--rain); border-color: var(--rain); background: var(--rain-soft); }
@@ -505,8 +506,8 @@
         <p>Everyone's heard the line: <em>"don't bother running — you just slam into more rain and get wetter."</em>
         Is that actually true? Let's pin it down and simulate.</p>
         <p>Model yourself as a <strong>1×1 block</strong> crossing <strong>10 m</strong> of open rain. You either
-        <strong>walk at 1 m/s</strong> or <strong>run at 2 m/s</strong>. Rain falls at a steady <strong>2 m/s</strong>.
-        The question: over the whole trip, how much total rain lands on you?</p>
+        <strong>walk at 1 m/s</strong> or <strong>run at 2 m/s</strong>. You'll set the rain's speed and direction yourself
+        in the lab below. The question: over the whole trip, how much total rain lands on you?</p>
 
         <h2>Two surfaces, two different rules</h2>
         <p>Rain only lands on two sides of a forward-moving block, and they behave completely differently:</p>
@@ -527,12 +528,19 @@
         </aside>
 
         <h2>The rain lab</h2>
-        <p>Pick a rain direction. Both blocks cross the same 10 m under the same rain — the runner just spends less time in it.</p>
+        <p>Pick a rain direction and speed. Both blocks cross the same 10 m under the same rain — the runner just spends less time in it.</p>
         <div class="sim">
           <div class="segbtns">
+            <span class="seglabel">direction</span>
             <button class="segbtn active" data-sc="vertical">↓ Vertical</button>
             <button class="segbtn" data-sc="head">↙ Headwind (into you)</button>
             <button class="segbtn" data-sc="tail">↘ Tailwind (behind you)</button>
+          </div>
+          <div class="segbtns">
+            <span class="seglabel">rain speed</span>
+            <button class="segbtn" data-u="1">1 m/s</button>
+            <button class="segbtn active" data-u="2">2 m/s</button>
+            <button class="segbtn" data-u="10">10 m/s</button>
           </div>
           <figure style="margin:0"><canvas id="rainScene" width="660" height="320"></canvas><figcaption id="rainCap">vertical rain · both cross 10 m; the runner is out for half the time</figcaption></figure>
           <figure style="margin:16px 0 0"><canvas id="rainBars" width="660" height="200"></canvas><figcaption>total rain collected · pale = top, solid = front/back · shorter is drier</figcaption></figure>
@@ -541,22 +549,22 @@
         </div>
 
         <h2>All three, side by side</h2>
-        <p>The verdict never changes — running is drier — but <em>how much</em> drier depends on the wind:</p>
+        <p>Here are all three directions at the rain speed you've selected — turn the rain up and watch running's lead widen:</p>
         <div class="sim">
           <figure style="margin:0"><canvas id="rainAll" width="660" height="230"></canvas><figcaption>total rain collected · walk vs run across all three rain directions · shorter is drier</figcaption></figure>
           <div class="stats" id="rainAllStats"></div>
         </div>
 
         <h2>The takeaway</h2>
-        <p>The myth is busted: <strong>running always gets you less wet</strong>. Your front sweeps the same raindrops no
-        matter your speed — that part is fixed by the 10 m, not by how fast you cover it. What running buys you is
-        <em>less time</em> under the sky, which is the one part your front doesn't already cover. A headwind makes everything
-        wetter but running helps even more. A tailwind has a sweet spot: move with the rain's horizontal drift and your
-        front and back catch nothing at all, leaving only your top. So — run. And if the rain's at your back, run at
-        roughly its pace.</p>
-        <p class="note">Stylized model: a 1×1 block, uniform rain at 2 m/s, no splashback, no gusts. The numbers are exact
+        <p>The myth is busted: <strong>running never gets you wetter</strong> — it wins outright in vertical and headwind
+        rain, and at worst ties. Your front sweeps the same raindrops no matter your speed (for vertical rain) — that part is
+        fixed by the 10 m, not by how fast you cover it. What running buys you is <em>less time</em> under the sky, the one
+        part your front doesn't already cover — and the faster the rain falls, the more that's worth. The one subtlety is a
+        tailwind: the best speed is the rain's own horizontal drift, because then your front and back catch nothing — so a
+        gentle tailwind at walking pace is the rare case where a stroll ties a sprint. Otherwise: run.</p>
+        <p class="note">Stylized model: a 1×1 block, uniform rain at the speed you pick, no splashback, no gusts. The numbers are exact
         for these assumptions — change the block shape, the rain speed, or the angle and the magnitudes shift, but "running
-        is drier" holds across all three cases here.</p>`
+        never gets you wetter" holds across all three cases here.</p>`
     },
     {
       date: '2026 · 09 · 05',
@@ -678,26 +686,24 @@
 
   /* ---------------- Rain-run post init ---------------- */
   function rainInit() {
-    const U = 2, D = 10, A = 1, RHO = 1, MAXWET = 50;
-    const scen = {
-      vertical: { wx: 0,  label: 'Vertical rain' },
-      head:     { wx: -2, label: 'Headwind (45° into you)' },
-      tail:     { wx: 2,  label: 'Tailwind (45° behind you)' }
-    };
-    let cur = 'vertical';
+    const D = 10, A = 1, RHO = 1;
+    const dirs = { vertical: 'Vertical rain', head: 'Headwind (45° into you)', tail: 'Tailwind (45° behind you)' };
+    let cur = 'vertical', u = 2, maxWet = 30;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const wxOf = d => d === 'head' ? -u : d === 'tail' ? u : 0;
 
-    // exact wetness: top = time-based, side = swept front/back
-    function wet(v, wx){
-      const T = D/v, top = RHO*U*A*T, rel = wx - v, side = RHO*Math.abs(rel)*A*T;
+    // exact wetness: top = time-based (scales with rain speed u), side = swept front/back
+    function wet(v, wxv){
+      const T = D/v, top = RHO*u*A*T, rel = wxv - v, side = RHO*Math.abs(rel)*A*T;
       return { top, side, total: top+side, face: rel<0?'front':(rel>0?'back':'none'), T };
     }
+    function recalcMax(){ maxWet = Math.max(...Object.keys(dirs).flatMap(d => [wet(1,wxOf(d)).total, wet(2,wxOf(d)).total]), 1); }
 
     // ---- animated scene (two lanes: walk + run under the same rain) ----
     const SCENE = document.getElementById('rainScene'); if (!SCENE) return null;
     const W = SCENE.width, H = SCENE.height, sctx = SCENE.getContext('2d');
     const drops = []; for (let i=0;i<90;i++) drops.push({ x:Math.random()*W, y:Math.random()*H });
-    function dir(wx){ const m = Math.hypot(wx, U); return { x:wx/m, y:U/m }; }
+    function dir(wxv){ const m = Math.hypot(wxv, u); return { x:wxv/m, y:u/m }; }
 
     function drawLane(v, label, laneTop, ts, wx, col){
       const mL = 14, mR = 128, trackW = W - mL - mR, laneH = H/2 - 24, groundY = laneTop + laneH - 8;
@@ -705,7 +711,7 @@
       sctx.beginPath(); sctx.moveTo(mL, groundY); sctx.lineTo(mL+trackW, groundY); sctx.stroke();
       const T = D/v, prog = Math.min(ts, T)/T, bsz = Math.min(48, trackW/10*1.5);
       const bx = mL + prog*(trackW - bsz), by = groundY - bsz;
-      const total = wet(v, wx).total, curWet = total * (Math.min(ts, T)/T), frac = Math.min(1, curWet/MAXWET);
+      const curWet = wet(v, wx).total * (Math.min(ts, T)/T), frac = Math.min(1, curWet/maxWet);
       sctx.fillStyle = V('--panel'); sctx.fillRect(bx, by, bsz, bsz);
       sctx.fillStyle = V('--rain'); sctx.globalAlpha = 0.12 + 0.55*frac; sctx.fillRect(bx, by, bsz, bsz); sctx.globalAlpha = 1;
       sctx.strokeStyle = col; sctx.lineWidth = 2; sctx.strokeRect(bx, by, bsz, bsz);
@@ -717,7 +723,7 @@
       if (ts >= T){ sctx.fillStyle = col; sctx.font = '11px ' + V('--mono'); sctx.fillText('✓ across', lx, laneTop + 72); }
     }
     function drawScene(ts){
-      const wx = scen[cur].wx, d = dir(wx), speed = 3.4;
+      const wx = wxOf(cur), d = dir(wx), speed = 3.4;
       sctx.clearRect(0,0,W,H);
       sctx.strokeStyle = V('--rain'); sctx.globalAlpha = 0.5; sctx.lineWidth = 1.4;
       drops.forEach(p => {
@@ -744,8 +750,8 @@
       const cv = document.getElementById('rainBars'); if (!cv) return;
       const ctx = cv.getContext('2d'), cW = cv.width, cH = cv.height, padT=24, padB=34, padL=16, padR=16;
       ctx.clearRect(0,0,cW,cH);
-      const ww = wet(1, scen[cur].wx), wr = wet(2, scen[cur].wx);
-      const maxV = Math.max(ww.total, wr.total)*1.25, plotH = cH-padT-padB, gy = val => cH-padB - (val/maxV)*plotH;
+      const ww = wet(1, wxOf(cur)), wr = wet(2, wxOf(cur));
+      const maxV = Math.max(ww.total, wr.total, 1)*1.25, plotH = cH-padT-padB, gy = val => cH-padB - (val/maxV)*plotH;
       ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,cH-padB); ctx.lineTo(cW-padR,cH-padB); ctx.stroke();
       const items = [ {label:'Walk · 1 m/s', w:ww, col:V('--c55')}, {label:'Run · 2 m/s', w:wr, col:V('--c82')} ];
       const bw = 92, gap = 74, startX = (cW - (items.length*bw + (items.length-1)*gap))/2;
@@ -768,8 +774,8 @@
       const ctx = cv.getContext('2d'), cW = cv.width, cH = cv.height, padT=28, padB=38, padL=16, padR=16;
       ctx.clearRect(0,0,cW,cH);
       const keys = ['vertical','head','tail'], names = { vertical:'Vertical', head:'Headwind', tail:'Tailwind' };
-      const data = keys.map(k => ({ name:names[k], walk:wet(1,scen[k].wx).total, run:wet(2,scen[k].wx).total }));
-      const maxV = Math.max(...data.flatMap(d => [d.walk,d.run]))*1.2, plotH = cH-padT-padB, gy = v => cH-padB - (v/maxV)*plotH;
+      const data = keys.map(k => ({ name:names[k], walk:wet(1,wxOf(k)).total, run:wet(2,wxOf(k)).total }));
+      const maxV = Math.max(...data.flatMap(d => [d.walk,d.run]), 1)*1.2, plotH = cH-padT-padB, gy = v => cH-padB - (v/maxV)*plotH;
       ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,cH-padB); ctx.lineTo(cW-padR,cH-padB); ctx.stroke();
       const gw = (cW-padL-padR)/keys.length, bw = Math.min(56, gw*0.26);
       data.forEach((d,gi) => {
@@ -787,31 +793,44 @@
     }
 
     const explains = {
-      vertical: (ww,wr) => `<strong>Running wins.</strong> The front sweeps the same wall of rain either way — a tie at <b>${ww.side.toFixed(0)}</b> for both — because it depends on the 10 m, not your speed. The runner only wins on the <em>top</em>: half the time outside, half the top rain (<b>${wr.top.toFixed(0)}</b> vs <b>${ww.top.toFixed(0)}</b>).`,
-      head: (ww,wr) => `<strong>Running wins by more.</strong> A headwind drives extra rain into your front, so that term grows — but running cuts the time-based top <em>and</em> blasts through the headwind in half the time, so the gap widens (<b>${ww.total.toFixed(0)}</b> → <b>${wr.total.toFixed(0)}</b>).`,
-      tail: (ww,wr) => `<strong>Running wins big.</strong> Here's the sweet spot: run at 2 m/s and you exactly match the rain's 2 m/s horizontal drift, so your front and back catch <em>nothing</em> — only your top gets wet (<b>${wr.total.toFixed(0)}</b>). The walker, slower than the rain, still takes it on the back (<b>${ww.total.toFixed(0)}</b>).`
+      vertical: (ww,wr) => `<strong>Running wins.</strong> The front sweeps the same wall of rain either way — a tie at <b>${ww.side.toFixed(0)}</b> for both — because it depends on the 10 m, not your speed. Running only wins on the <em>top</em>: half the time outside, half the top rain (<b>${wr.top.toFixed(0)}</b> vs <b>${ww.top.toFixed(0)}</b>). Crank the rain speed up and that top gap grows — running wins by more.`,
+      head: (ww,wr) => `<strong>Running wins by more.</strong> A headwind drives extra rain into your front, so that term grows — but running cuts the time-based top <em>and</em> blasts through the headwind in half the time, widening the gap (<b>${ww.total.toFixed(0)}</b> → <b>${wr.total.toFixed(0)}</b>).`,
+      tail: (ww,wr) => {
+        if (Math.abs(ww.total - wr.total) < 0.05)
+          return `<strong>A tie — the interesting case.</strong> The rain drifts sideways at ${u} m/s, exactly the walker's pace, so the walker rides along with it and only the top gets wet (<b>${ww.total.toFixed(0)}</b>). The runner overshoots back into the front, landing at the same <b>${wr.total.toFixed(0)}</b>. In a tailwind the sweet spot is the rain's own speed — here, a walk.`;
+        if (u <= 2)
+          return `<strong>Running wins big.</strong> The rain drifts sideways at ${u} m/s — exactly running pace — so the runner matches it and catches nothing on front or back, just its top (<b>${wr.total.toFixed(0)}</b>). The slower walker lets the rain catch its back (<b>${ww.total.toFixed(0)}</b>).`;
+        return `<strong>Running wins.</strong> The rain drifts sideways at ${u} m/s — faster than either of you — so it catches you both from behind, but the runner is closer to the rain's pace, so less lands on its back (<b>${wr.total.toFixed(0)}</b> vs <b>${ww.total.toFixed(0)}</b>). To stay driest here you'd have to match the rain at ${u} m/s.`;
+      }
     };
 
     function refresh(){
-      const ww = wet(1, scen[cur].wx), wr = wet(2, scen[cur].wx);
-      drawBars();
-      document.getElementById('rainStats').innerHTML =
-        `Walk collects <b>${ww.total.toFixed(0)}</b>, Run collects <b>${wr.total.toFixed(0)}</b> → running stays <b>${(100*(ww.total-wr.total)/ww.total).toFixed(0)}% drier</b>.`;
+      recalcMax();
+      const ww = wet(1, wxOf(cur)), wr = wet(2, wxOf(cur));
+      drawBars(); drawAll();
+      const diff = ww.total - wr.total;
+      document.getElementById('rainStats').innerHTML = Math.abs(diff) < 0.05
+        ? `Walk and Run both collect <b>${ww.total.toFixed(0)}</b> — a <b>tie</b> (the walker already matches the tailwind).`
+        : `Walk collects <b>${ww.total.toFixed(0)}</b>, Run collects <b>${wr.total.toFixed(0)}</b> → running stays <b>${(100*diff/ww.total).toFixed(0)}% drier</b>.`;
       document.getElementById('rainExplain').innerHTML = explains[cur](ww, wr);
       const cap = document.getElementById('rainCap');
-      if (cap) cap.textContent = scen[cur].label.toLowerCase() + ' · both cross 10 m; the runner is out for half the time';
+      if (cap) cap.textContent = `${dirs[cur].toLowerCase()} at ${u} m/s · both cross 10 m; the runner is out for half the time`;
     }
 
-    document.querySelectorAll('.segbtn').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.segbtn[data-sc]').forEach(b => b.addEventListener('click', () => {
       cur = b.dataset.sc;
-      document.querySelectorAll('.segbtn').forEach(x => x.classList.toggle('active', x === b));
+      document.querySelectorAll('.segbtn[data-sc]').forEach(x => x.classList.toggle('active', x === b));
+      t0 = performance.now(); refresh();
+    }));
+    document.querySelectorAll('.segbtn[data-u]').forEach(b => b.addEventListener('click', () => {
+      u = +b.dataset.u;
+      document.querySelectorAll('.segbtn[data-u]').forEach(x => x.classList.toggle('active', x === b));
       t0 = performance.now(); refresh();
     }));
 
-    drawAll();
     refresh();
     document.getElementById('rainAllStats').innerHTML =
-      `In all three, <b>running is drier</b> — most dramatically with a tailwind, where matching the rain's pace leaves only your top wet.`;
+      `Running is <b>never worse</b>, and <b>faster rain widens its lead</b> — the top term (the part running shrinks) grows with rain speed. The lone exception is a gentle tailwind that matches your walking pace, where it merely ties.`;
     if (reduce) drawScene(D); else frame();
 
     return () => { if (raf) cancelAnimationFrame(raf); };
