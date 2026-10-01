@@ -148,6 +148,19 @@
   .runbtn:hover { filter: brightness(1.05); }
   .segbtns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
   .seglabel { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-right: 2px; }
+  .matrixwrap { overflow-x: auto; }
+  .matrix { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: 8px 10px; align-items: center; min-width: 440px; }
+  .matrix .mhead { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; }
+  .matrix .mside { font-family: var(--mono); font-size: 11px; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .mcell { border: 1px solid var(--line); border-radius: 9px; padding: 8px 9px; background: var(--ground); }
+  .mcell.tie { border-color: var(--rain); }
+  .mrow { display: flex; align-items: center; gap: 6px; margin: 3px 0; font-family: var(--mono); font-size: 10.5px; }
+  .mrow .lab { width: 12px; color: var(--faint); }
+  .mtrack { flex: 1; height: 10px; background: var(--panel); border-radius: 3px; overflow: hidden; min-width: 18px; }
+  .mbar { height: 100%; border-radius: 3px; }
+  .mrow .mval { width: 26px; text-align: right; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mtag { font-family: var(--mono); font-size: 10px; color: var(--c82); text-align: right; margin-top: 4px; }
+  .mcell.tie .mtag { color: var(--rain); }
   .segbtn { font-family: var(--mono); font-size: 12.5px; background: none; border: 1px solid var(--line); color: var(--muted); padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
   .segbtn:hover { color: var(--ink); }
   .segbtn.active { color: var(--rain); border-color: var(--rain); background: var(--rain-soft); }
@@ -533,8 +546,8 @@
           <div class="segbtns">
             <span class="seglabel">direction</span>
             <button class="segbtn active" data-sc="vertical">↓ Vertical</button>
-            <button class="segbtn" data-sc="head">↙ Headwind (into you)</button>
-            <button class="segbtn" data-sc="tail">↘ Tailwind (behind you)</button>
+            <button class="segbtn" data-sc="head">↙ Headwind</button>
+            <button class="segbtn" data-sc="tail">↘ Tailwind</button>
           </div>
           <div class="segbtns">
             <span class="seglabel">rain speed</span>
@@ -548,11 +561,12 @@
           <p id="rainExplain" style="margin:12px 0 0"></p>
         </div>
 
-        <h2>All three, side by side</h2>
-        <p>Here are all three directions at the rain speed you've selected — turn the rain up and watch running's lead widen:</p>
+        <h2>Everything at once</h2>
+        <p>The whole picture — all three directions × all three speeds. Bars share one scale, so you can read both who's
+        drier (<b>W</b> = walk, magenta; <b>R</b> = run, gold) <em>and</em> how the totals balloon as the rain speeds up:</p>
         <div class="sim">
-          <figure style="margin:0"><canvas id="rainAll" width="660" height="230"></canvas><figcaption>total rain collected · walk vs run across all three rain directions · shorter is drier</figcaption></figure>
-          <div class="stats" id="rainAllStats"></div>
+          <div class="matrixwrap"><div id="rainMatrix" class="matrix"></div></div>
+          <div class="stats" id="rainAllStats" style="margin-top:14px"></div>
         </div>
 
         <h2>The takeaway</h2>
@@ -768,28 +782,27 @@
       ctx.fillStyle = V('--muted'); ctx.fillRect(padL+58, 12, 11, 11); ctx.fillText('front / back', padL+74, 21);
     }
 
-    // ---- grouped bar: all three scenarios, walk vs run totals ----
-    function drawAll(){
-      const cv = document.getElementById('rainAll'); if (!cv) return;
-      const ctx = cv.getContext('2d'), cW = cv.width, cH = cv.height, padT=28, padB=38, padL=16, padR=16;
-      ctx.clearRect(0,0,cW,cH);
-      const keys = ['vertical','head','tail'], names = { vertical:'Vertical', head:'Headwind', tail:'Tailwind' };
-      const data = keys.map(k => ({ name:names[k], walk:wet(1,wxOf(k)).total, run:wet(2,wxOf(k)).total }));
-      const maxV = Math.max(...data.flatMap(d => [d.walk,d.run]), 1)*1.2, plotH = cH-padT-padB, gy = v => cH-padB - (v/maxV)*plotH;
-      ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,cH-padB); ctx.lineTo(cW-padR,cH-padB); ctx.stroke();
-      const gw = (cW-padL-padR)/keys.length, bw = Math.min(56, gw*0.26);
-      data.forEach((d,gi) => {
-        const cx = padL + gw*gi + gw/2;
-        [ {v:d.walk,c:V('--c55')}, {v:d.run,c:V('--c82')} ].forEach((val,vi) => {
-          const bx = cx + (vi===0 ? -bw-5 : 5), by = gy(val.v);
-          ctx.fillStyle = val.c; ctx.fillRect(bx, by, bw, (cH-padB)-by);
-          ctx.fillStyle = V('--ink'); ctx.font = '600 12px ' + V('--mono'); ctx.textAlign = 'center'; ctx.fillText(val.v.toFixed(0), bx+bw/2, by-6);
+    // ---- 3x3 matrix: every direction x every speed, one shared scale ----
+    function buildMatrix(){
+      const host = document.getElementById('rainMatrix'); if (!host) return;
+      const dirKeys = ['vertical','head','tail'], dirNames = { vertical:'Vertical ↓', head:'Headwind ↙', tail:'Tailwind ↘' };
+      const speeds = [1, 2, 10];
+      const wetAt = (v, dkey, s) => { const T = D/v, top = s*A*T, wxv = dkey==='head'?-s : dkey==='tail'?s : 0; return top + Math.abs(wxv - v)*A*T; };
+      let gmax = 1;
+      dirKeys.forEach(d => speeds.forEach(s => { gmax = Math.max(gmax, wetAt(1,d,s), wetAt(2,d,s)); }));
+      let html = `<div class="mhead"></div>` + speeds.map(s => `<div class="mhead">${s} m/s</div>`).join('');
+      dirKeys.forEach(d => {
+        html += `<div class="mside">${dirNames[d]}</div>`;
+        speeds.forEach(s => {
+          const wv = wetAt(1,d,s), rv = wetAt(2,d,s), tie = Math.abs(wv-rv) < 0.05;
+          const tag = tie ? 'tie' : `run −${(100*(wv-rv)/wv).toFixed(0)}%`;
+          html += `<div class="mcell${tie?' tie':''}">`
+            + `<div class="mrow"><span class="lab">W</span><div class="mtrack"><div class="mbar" style="width:${(wv/gmax*100).toFixed(1)}%;background:var(--c55)"></div></div><span class="mval">${wv.toFixed(0)}</span></div>`
+            + `<div class="mrow"><span class="lab">R</span><div class="mtrack"><div class="mbar" style="width:${(rv/gmax*100).toFixed(1)}%;background:var(--c82)"></div></div><span class="mval">${rv.toFixed(0)}</span></div>`
+            + `<div class="mtag">${tag}</div></div>`;
         });
-        ctx.fillStyle = V('--muted'); ctx.font = '13px ' + V('--sans'); ctx.textAlign = 'center'; ctx.fillText(d.name, cx, cH-padB+20);
       });
-      ctx.textAlign = 'left'; ctx.font = '12px ' + V('--mono');
-      ctx.fillStyle = V('--c55'); ctx.fillRect(padL, 12, 11, 11); ctx.fillStyle = V('--muted'); ctx.fillText('Walk', padL+16, 21);
-      ctx.fillStyle = V('--c82'); ctx.fillRect(padL+72, 12, 11, 11); ctx.fillStyle = V('--muted'); ctx.fillText('Run', padL+88, 21);
+      host.innerHTML = html;
     }
 
     const explains = {
@@ -807,7 +820,7 @@
     function refresh(){
       recalcMax();
       const ww = wet(1, wxOf(cur)), wr = wet(2, wxOf(cur));
-      drawBars(); drawAll();
+      drawBars();
       const diff = ww.total - wr.total;
       document.getElementById('rainStats').innerHTML = Math.abs(diff) < 0.05
         ? `Walk and Run both collect <b>${ww.total.toFixed(0)}</b> — a <b>tie</b> (the walker already matches the tailwind).`
@@ -828,9 +841,10 @@
       t0 = performance.now(); refresh();
     }));
 
+    buildMatrix();
     refresh();
     document.getElementById('rainAllStats').innerHTML =
-      `Running is <b>never worse</b>, and <b>faster rain widens its lead</b> — the top term (the part running shrinks) grows with rain speed. The lone exception is a gentle tailwind that matches your walking pace, where it merely ties.`;
+      `Reading across each row, <b>faster rain widens running's lead</b> (the top term grows with rain speed). Reading down, a <b>headwind</b> is always the wettest. The lone tie sits at <b>tailwind · 1 m/s</b>, where the walker's pace already matches the rain.`;
     if (reduce) drawScene(D); else frame();
 
     return () => { if (raf) cancelAnimationFrame(raf); };
