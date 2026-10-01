@@ -126,6 +126,9 @@
   aside.callout b.tag { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--warn); display: block; margin-bottom: 6px; }
   aside.callout a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--warn); text-underline-offset: 2px; }
   aside.callout .src { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 8px; }
+  aside.callout.rain { border-left-color: var(--rain); background: var(--rain-soft); }
+  aside.callout.rain b.tag { color: var(--rain); }
+  aside.callout.rain a { text-decoration-color: var(--rain); }
 
   figure { margin: 24px 0; }
   figcaption { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-top: 8px; text-align: center; }
@@ -515,6 +518,13 @@
         </ul>
         <p>So running can only ever <em>help</em>: it shrinks the time-based part and leaves the distance-based part
         untouched. Let's watch it.</p>
+        <aside class="callout rain"><b class="tag">edge case · what if you just stand still?</b>
+          Then your front and back catch nothing — vertical rain has no sideways motion, so only your top gets wet. Sounds
+          ideal… except standing still means you never cross the 10 m: infinite time outside, infinitely soggy top. And the
+          moment you start moving, your front term is <code>ρ·v·A·(D/v) = ρ·A·D</code> — the speed cancels, so your front
+          collects the <em>same</em> amount however fast you go. Running can't lower that; it only shrinks the time-based top.
+          That's the whole trick: your front gets hit either way, so you win by spending less time under the sky.
+        </aside>
 
         <h2>The rain lab</h2>
         <p>Pick a rain direction. Both blocks cross the same 10 m under the same rain — the runner just spends less time in it.</p>
