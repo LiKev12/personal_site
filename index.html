@@ -16,6 +16,7 @@
     --faint: #96938B; --line: #E7E4DD; --accent: #BC4A76; --accent-soft: rgba(188,74,118,0.10);
     --warn: #C67B3C; --warn-soft: rgba(198,123,60,0.16);
     --c55: #BC4A76; --c82: #C9962E; --c82-soft: rgba(201,150,46,0.16); /* chart colors: (5,5) magenta, (8,2) golden amber */
+    --rain: #5E8CA6; --rain-soft: rgba(94,140,166,0.16); /* water / rain accent */
     --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   }
@@ -25,6 +26,7 @@
       --faint: #77746B; --line: #2B2924; --accent: #E884A9; --accent-soft: rgba(232,132,169,0.14);
       --warn: #D69A5C; --warn-soft: rgba(214,154,92,0.18);
       --c55: #E884A9; --c82: #E6B14E; --c82-soft: rgba(230,177,78,0.18);
+      --rain: #86B2CC; --rain-soft: rgba(134,178,204,0.2);
     }
   }
   :root[data-theme="dark"] {
@@ -32,6 +34,7 @@
     --faint: #77746B; --line: #2B2924; --accent: #E884A9; --accent-soft: rgba(232,132,169,0.14);
     --warn: #D69A5C; --warn-soft: rgba(214,154,92,0.18);
     --c55: #E884A9; --c82: #E6B14E; --c82-soft: rgba(230,177,78,0.18);
+    --rain: #86B2CC; --rain-soft: rgba(134,178,204,0.2);
   }
 
   * { box-sizing: border-box; }
@@ -140,6 +143,10 @@
   .clock b { color: var(--accent); }
   .runbtn { font-family: var(--mono); font-size: 12.5px; background: var(--accent); color: #fff; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
   .runbtn:hover { filter: brightness(1.05); }
+  .segbtns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .segbtn { font-family: var(--mono); font-size: 12.5px; background: none; border: 1px solid var(--line); color: var(--muted); padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
+  .segbtn:hover { color: var(--ink); }
+  .segbtn.active { color: var(--rain); border-color: var(--rain); background: var(--rain-soft); }
   .stats { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.9; margin-top: 12px; }
   .stats .dotA, .stats .dotB { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
   .stats .dotA { background: var(--c55); }
@@ -485,6 +492,63 @@
         would be its own component dropped into the Markdown. Numbers regenerate every run, so they'll wiggle a little.</p>`
     },
     {
+      date: '2026 · 09 · 30',
+      title: 'Rain-run: do you actually stay drier if you run?',
+      sub: 'The classic wet-weather debate, settled with a simulation — wind included.',
+      init: rainInit,
+      body: `
+        <h1>Rain-run: do you actually stay drier if you run?</h1>
+        <div class="meta">September 30, 2026 · 8 min read</div>
+        <p>Everyone's heard the line: <em>"don't bother running — you just slam into more rain and get wetter."</em>
+        Is that actually true? Let's pin it down and simulate.</p>
+        <p>Model yourself as a <strong>1×1 block</strong> crossing <strong>10 m</strong> of open rain. You either
+        <strong>walk at 1 m/s</strong> or <strong>run at 2 m/s</strong>. Rain falls at a steady <strong>2 m/s</strong>.
+        The question: over the whole trip, how much total rain lands on you?</p>
+
+        <h2>Two surfaces, two different rules</h2>
+        <p>Rain only lands on two sides of a forward-moving block, and they behave completely differently:</p>
+        <ul>
+          <li><strong>Your top</strong> collects rain the entire time you're outside — it's <em>time-based</em>. Out for
+          half as long → half the top rain. Running helps.</li>
+          <li><strong>Your front</strong> ploughs into a wall of rain — it's <em>distance-based</em>. You sweep the same
+          raindrops over 10 m whether you crawl or sprint. For vertical rain, speed doesn't change it at all.</li>
+        </ul>
+        <p>So running can only ever <em>help</em>: it shrinks the time-based part and leaves the distance-based part
+        untouched. Let's watch it.</p>
+
+        <h2>The rain lab</h2>
+        <p>Pick a rain direction. Both blocks cross the same 10 m under the same rain — the runner just spends less time in it.</p>
+        <div class="sim">
+          <div class="segbtns">
+            <button class="segbtn active" data-sc="vertical">↓ Vertical</button>
+            <button class="segbtn" data-sc="head">↙ Headwind (into you)</button>
+            <button class="segbtn" data-sc="tail">↘ Tailwind (behind you)</button>
+          </div>
+          <figure style="margin:0"><canvas id="rainScene" width="660" height="320"></canvas><figcaption id="rainCap">vertical rain · both cross 10 m; the runner is out for half the time</figcaption></figure>
+          <figure style="margin:16px 0 0"><canvas id="rainBars" width="660" height="200"></canvas><figcaption>total rain collected · pale = top, solid = front/back · shorter is drier</figcaption></figure>
+          <div class="stats" id="rainStats"></div>
+          <p id="rainExplain" style="margin:12px 0 0"></p>
+        </div>
+
+        <h2>All three, side by side</h2>
+        <p>The verdict never changes — running is drier — but <em>how much</em> drier depends on the wind:</p>
+        <div class="sim">
+          <figure style="margin:0"><canvas id="rainAll" width="660" height="230"></canvas><figcaption>total rain collected · walk vs run across all three rain directions · shorter is drier</figcaption></figure>
+          <div class="stats" id="rainAllStats"></div>
+        </div>
+
+        <h2>The takeaway</h2>
+        <p>The myth is busted: <strong>running always gets you less wet</strong>. Your front sweeps the same raindrops no
+        matter your speed — that part is fixed by the 10 m, not by how fast you cover it. What running buys you is
+        <em>less time</em> under the sky, which is the one part your front doesn't already cover. A headwind makes everything
+        wetter but running helps even more. A tailwind has a sweet spot: move with the rain's horizontal drift and your
+        front and back catch nothing at all, leaving only your top. So — run. And if the rain's at your back, run at
+        roughly its pace.</p>
+        <p class="note">Stylized model: a 1×1 block, uniform rain at 2 m/s, no splashback, no gusts. The numbers are exact
+        for these assumptions — change the block shape, the rain speed, or the angle and the magnitudes shift, but "running
+        is drier" holds across all three cases here.</p>`
+    },
+    {
       date: '2026 · 09 · 05',
       title: 'Animating a tennis serve with 20 lines of Canvas',
       sub: 'A parabola, some drag, and a bounce — live in the page.',
@@ -600,6 +664,147 @@
     runAll();
 
     return () => stops.forEach(fn => fn());
+  }
+
+  /* ---------------- Rain-run post init ---------------- */
+  function rainInit() {
+    const U = 2, D = 10, A = 1, RHO = 1, MAXWET = 50;
+    const scen = {
+      vertical: { wx: 0,  label: 'Vertical rain' },
+      head:     { wx: -2, label: 'Headwind (45° into you)' },
+      tail:     { wx: 2,  label: 'Tailwind (45° behind you)' }
+    };
+    let cur = 'vertical';
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // exact wetness: top = time-based, side = swept front/back
+    function wet(v, wx){
+      const T = D/v, top = RHO*U*A*T, rel = wx - v, side = RHO*Math.abs(rel)*A*T;
+      return { top, side, total: top+side, face: rel<0?'front':(rel>0?'back':'none'), T };
+    }
+
+    // ---- animated scene (two lanes: walk + run under the same rain) ----
+    const SCENE = document.getElementById('rainScene'); if (!SCENE) return null;
+    const W = SCENE.width, H = SCENE.height, sctx = SCENE.getContext('2d');
+    const drops = []; for (let i=0;i<90;i++) drops.push({ x:Math.random()*W, y:Math.random()*H });
+    function dir(wx){ const m = Math.hypot(wx, U); return { x:wx/m, y:U/m }; }
+
+    function drawLane(v, label, laneTop, ts, wx, col){
+      const mL = 14, mR = 128, trackW = W - mL - mR, laneH = H/2 - 24, groundY = laneTop + laneH - 8;
+      sctx.strokeStyle = V('--line'); sctx.lineWidth = 1;
+      sctx.beginPath(); sctx.moveTo(mL, groundY); sctx.lineTo(mL+trackW, groundY); sctx.stroke();
+      const T = D/v, prog = Math.min(ts, T)/T, bsz = Math.min(48, trackW/10*1.5);
+      const bx = mL + prog*(trackW - bsz), by = groundY - bsz;
+      const total = wet(v, wx).total, curWet = total * (Math.min(ts, T)/T), frac = Math.min(1, curWet/MAXWET);
+      sctx.fillStyle = V('--panel'); sctx.fillRect(bx, by, bsz, bsz);
+      sctx.fillStyle = V('--rain'); sctx.globalAlpha = 0.12 + 0.55*frac; sctx.fillRect(bx, by, bsz, bsz); sctx.globalAlpha = 1;
+      sctx.strokeStyle = col; sctx.lineWidth = 2; sctx.strokeRect(bx, by, bsz, bsz);
+      const lx = mL + trackW + 12;
+      sctx.textAlign = 'left';
+      sctx.fillStyle = V('--ink'); sctx.font = '600 12px ' + V('--mono'); sctx.fillText(label, lx, laneTop + 16);
+      sctx.fillStyle = V('--muted'); sctx.font = '11px ' + V('--mono'); sctx.fillText('rain collected', lx, laneTop + 34);
+      sctx.fillStyle = V('--rain'); sctx.font = '600 16px ' + V('--mono'); sctx.fillText(curWet.toFixed(0), lx, laneTop + 54);
+      if (ts >= T){ sctx.fillStyle = col; sctx.font = '11px ' + V('--mono'); sctx.fillText('✓ across', lx, laneTop + 72); }
+    }
+    function drawScene(ts){
+      const wx = scen[cur].wx, d = dir(wx), speed = 3.4;
+      sctx.clearRect(0,0,W,H);
+      sctx.strokeStyle = V('--rain'); sctx.globalAlpha = 0.5; sctx.lineWidth = 1.4;
+      drops.forEach(p => {
+        p.x += d.x*speed; p.y += d.y*speed;
+        if (p.y > H){ p.y = -4; p.x = Math.random()*W; }
+        if (p.x < -6) p.x = W+6; if (p.x > W+6) p.x = -6;
+        sctx.beginPath(); sctx.moveTo(p.x, p.y); sctx.lineTo(p.x - d.x*7, p.y - d.y*7); sctx.stroke();
+      });
+      sctx.globalAlpha = 1;
+      drawLane(1, 'Walk · 1 m/s', 14, ts, wx, V('--c55'));
+      drawLane(2, 'Run · 2 m/s', H/2 + 8, ts, wx, V('--c82'));
+    }
+
+    let t0 = performance.now(), raf = null;
+    function frame(){
+      const ts = (performance.now() - t0)/1000 * 2.2;
+      drawScene(ts);
+      if (ts > D + 1.6) t0 = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
+
+    // ---- stacked bar: selected scenario, walk vs run, top + front/back ----
+    function drawBars(){
+      const cv = document.getElementById('rainBars'); if (!cv) return;
+      const ctx = cv.getContext('2d'), cW = cv.width, cH = cv.height, padT=24, padB=34, padL=16, padR=16;
+      ctx.clearRect(0,0,cW,cH);
+      const ww = wet(1, scen[cur].wx), wr = wet(2, scen[cur].wx);
+      const maxV = Math.max(ww.total, wr.total)*1.25, plotH = cH-padT-padB, gy = val => cH-padB - (val/maxV)*plotH;
+      ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,cH-padB); ctx.lineTo(cW-padR,cH-padB); ctx.stroke();
+      const items = [ {label:'Walk · 1 m/s', w:ww, col:V('--c55')}, {label:'Run · 2 m/s', w:wr, col:V('--c82')} ];
+      const bw = 92, gap = 74, startX = (cW - (items.length*bw + (items.length-1)*gap))/2;
+      items.forEach((it,i) => {
+        const bx = startX + i*(bw+gap);
+        ctx.fillStyle = it.col; ctx.globalAlpha = 0.34; ctx.fillRect(bx, gy(it.w.top), bw, (cH-padB)-gy(it.w.top)); ctx.globalAlpha = 1; // top (pale)
+        ctx.fillStyle = it.col; ctx.fillRect(bx, gy(it.w.total), bw, gy(it.w.top)-gy(it.w.total)); // front/back (solid)
+        ctx.fillStyle = V('--ink'); ctx.font = '600 13px ' + V('--mono'); ctx.textAlign = 'center'; ctx.fillText(it.w.total.toFixed(0), bx+bw/2, gy(it.w.total)-7);
+        ctx.fillStyle = V('--muted'); ctx.font = '12px ' + V('--mono'); ctx.fillText(it.label, bx+bw/2, cH-padB+18);
+      });
+      ctx.textAlign = 'left'; ctx.font = '11px ' + V('--mono');
+      ctx.fillStyle = V('--muted'); ctx.globalAlpha = 0.34; ctx.fillRect(padL, 12, 11, 11); ctx.globalAlpha = 1;
+      ctx.fillStyle = V('--muted'); ctx.fillText('top', padL+16, 21);
+      ctx.fillStyle = V('--muted'); ctx.fillRect(padL+58, 12, 11, 11); ctx.fillText('front / back', padL+74, 21);
+    }
+
+    // ---- grouped bar: all three scenarios, walk vs run totals ----
+    function drawAll(){
+      const cv = document.getElementById('rainAll'); if (!cv) return;
+      const ctx = cv.getContext('2d'), cW = cv.width, cH = cv.height, padT=28, padB=38, padL=16, padR=16;
+      ctx.clearRect(0,0,cW,cH);
+      const keys = ['vertical','head','tail'], names = { vertical:'Vertical', head:'Headwind', tail:'Tailwind' };
+      const data = keys.map(k => ({ name:names[k], walk:wet(1,scen[k].wx).total, run:wet(2,scen[k].wx).total }));
+      const maxV = Math.max(...data.flatMap(d => [d.walk,d.run]))*1.2, plotH = cH-padT-padB, gy = v => cH-padB - (v/maxV)*plotH;
+      ctx.strokeStyle = V('--line'); ctx.beginPath(); ctx.moveTo(padL,cH-padB); ctx.lineTo(cW-padR,cH-padB); ctx.stroke();
+      const gw = (cW-padL-padR)/keys.length, bw = Math.min(56, gw*0.26);
+      data.forEach((d,gi) => {
+        const cx = padL + gw*gi + gw/2;
+        [ {v:d.walk,c:V('--c55')}, {v:d.run,c:V('--c82')} ].forEach((val,vi) => {
+          const bx = cx + (vi===0 ? -bw-5 : 5), by = gy(val.v);
+          ctx.fillStyle = val.c; ctx.fillRect(bx, by, bw, (cH-padB)-by);
+          ctx.fillStyle = V('--ink'); ctx.font = '600 12px ' + V('--mono'); ctx.textAlign = 'center'; ctx.fillText(val.v.toFixed(0), bx+bw/2, by-6);
+        });
+        ctx.fillStyle = V('--muted'); ctx.font = '13px ' + V('--sans'); ctx.textAlign = 'center'; ctx.fillText(d.name, cx, cH-padB+20);
+      });
+      ctx.textAlign = 'left'; ctx.font = '12px ' + V('--mono');
+      ctx.fillStyle = V('--c55'); ctx.fillRect(padL, 12, 11, 11); ctx.fillStyle = V('--muted'); ctx.fillText('Walk', padL+16, 21);
+      ctx.fillStyle = V('--c82'); ctx.fillRect(padL+72, 12, 11, 11); ctx.fillStyle = V('--muted'); ctx.fillText('Run', padL+88, 21);
+    }
+
+    const explains = {
+      vertical: (ww,wr) => `<strong>Running wins.</strong> The front sweeps the same wall of rain either way — a tie at <b>${ww.side.toFixed(0)}</b> for both — because it depends on the 10 m, not your speed. The runner only wins on the <em>top</em>: half the time outside, half the top rain (<b>${wr.top.toFixed(0)}</b> vs <b>${ww.top.toFixed(0)}</b>).`,
+      head: (ww,wr) => `<strong>Running wins by more.</strong> A headwind drives extra rain into your front, so that term grows — but running cuts the time-based top <em>and</em> blasts through the headwind in half the time, so the gap widens (<b>${ww.total.toFixed(0)}</b> → <b>${wr.total.toFixed(0)}</b>).`,
+      tail: (ww,wr) => `<strong>Running wins big.</strong> Here's the sweet spot: run at 2 m/s and you exactly match the rain's 2 m/s horizontal drift, so your front and back catch <em>nothing</em> — only your top gets wet (<b>${wr.total.toFixed(0)}</b>). The walker, slower than the rain, still takes it on the back (<b>${ww.total.toFixed(0)}</b>).`
+    };
+
+    function refresh(){
+      const ww = wet(1, scen[cur].wx), wr = wet(2, scen[cur].wx);
+      drawBars();
+      document.getElementById('rainStats').innerHTML =
+        `Walk collects <b>${ww.total.toFixed(0)}</b>, Run collects <b>${wr.total.toFixed(0)}</b> → running stays <b>${(100*(ww.total-wr.total)/ww.total).toFixed(0)}% drier</b>.`;
+      document.getElementById('rainExplain').innerHTML = explains[cur](ww, wr);
+      const cap = document.getElementById('rainCap');
+      if (cap) cap.textContent = scen[cur].label.toLowerCase() + ' · both cross 10 m; the runner is out for half the time';
+    }
+
+    document.querySelectorAll('.segbtn').forEach(b => b.addEventListener('click', () => {
+      cur = b.dataset.sc;
+      document.querySelectorAll('.segbtn').forEach(x => x.classList.toggle('active', x === b));
+      t0 = performance.now(); refresh();
+    }));
+
+    drawAll();
+    refresh();
+    document.getElementById('rainAllStats').innerHTML =
+      `In all three, <b>running is drier</b> — most dramatically with a tailwind, where matching the rain's pace leaves only your top wet.`;
+    if (reduce) drawScene(D); else frame();
+
+    return () => { if (raf) cancelAnimationFrame(raf); };
   }
 
   /* ---------------- Tennis post init ---------------- */
