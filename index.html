@@ -103,9 +103,22 @@
   .demo-meta b { color: var(--ink); font-weight: 600; }
   .demo-meta button { font-family: var(--mono); font-size: 11.5px; margin-top: 10px; background: none; border: 1px solid var(--line); color: var(--muted); padding: 5px 10px; border-radius: 7px; cursor: pointer; display: block; }
   .demo-meta button:hover { color: var(--accent); border-color: var(--accent); }
-  .proj-media { margin: 14px 0 2px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); max-width: 720px; }
-  .proj-media img { display: block; width: 100%; height: auto; }
-  .proj-cap { font-family: var(--mono); font-size: 11px; color: var(--faint); margin: 8px 0 2px; max-width: 60ch; line-height: 1.6; }
+  .proj-media { margin: 14px 0 2px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); max-width: 760px; }
+  .proj-media img, .proj-media video { display: block; width: 100%; height: auto; }
+  .proj-cap { font-family: var(--mono); font-size: 11px; color: var(--faint); margin: 14px 0 2px; max-width: 64ch; line-height: 1.7; }
+  .proj-h { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin: 24px 0 9px; }
+  .proj-tech { font-family: var(--mono); font-size: 13px; color: var(--muted); margin: 0; line-height: 1.7; }
+  .proj-feat { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+  .proj-feat li { margin: 0 0 8px; }
+  .proj-feat b { color: var(--ink); font-weight: 600; }
+  .proj-faq { margin: 22px 0 2px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .proj-faq summary { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); cursor: pointer; list-style: none; }
+  .proj-faq summary::-webkit-details-marker { display: none; }
+  .proj-faq summary::before { content: "＋ "; }
+  .proj-faq[open] summary::before { content: "－ "; }
+  .proj-faq .q { color: var(--ink); font-weight: 600; font-size: 14.5px; margin: 16px 0 3px; }
+  .proj-faq .a { color: var(--muted); font-size: 14px; margin: 0; line-height: 1.6; }
+  .proj-faq .a a { color: var(--accent); }
   .win { color: var(--accent); }
 
   /* ---------- Posts list ---------- */
@@ -313,19 +326,65 @@
 
       <div class="thing">
         <h3>Avalon</h3>
-        <p>A real-time, multiplayer web version of the social-deduction game
-        <em>The Resistance: Avalon</em> — lobbies, live chat, hidden roles, and the full
-        mission-and-voting flow. Built with React, Node/Express, Socket.io, and MongoDB.</p>
+        <p>A hobby project built with a friend — a full online version of the social-deduction
+        board game <em>The Resistance: Avalon</em>, so fans can play together over the web with
+        hidden roles, live chat, and competitive matchmaking.</p>
         <figure class="proj-media">
-          <img src="assets/avalon-demo.gif" width="820" height="513" loading="lazy"
-            alt="Screen recording of the Avalon web app — home page, game lobby, hidden roles, and mission voting.">
+          <video src="assets/avalon-demo.mp4" width="1280" height="800" autoplay loop muted playsinline preload="metadata"
+            aria-label="Walkthrough of the Avalon web app — home page, game lobby, roles, stats, and mission voting."></video>
         </figure>
-        <p class="proj-cap">↑ demo walkthrough · the game server isn't hosted anymore, so the live site is a static front-end — but the rules page still works.</p>
         <div class="brackets">
           <a href="https://likev12.github.io/AvalonApp/#/rules" target="_blank" rel="noopener">rules</a>
           <a href="https://likev12.github.io/AvalonApp/" target="_blank" rel="noopener">live site</a>
           <a href="https://github.com/LiKev12/AvalonApp" target="_blank" rel="noopener">source</a>
         </div>
+
+        <div class="proj-h">Built with</div>
+        <p class="proj-tech">React · Node/Express · MongoDB · Socket.IO (real-time gameplay &amp; chat) · Reactstrap · Recharts</p>
+
+        <div class="proj-h">Features</div>
+        <ul class="proj-feat">
+          <li><b>Private &amp; public games</b> — password-gated private rooms and open public rooms, all visible in the game lobby; spectators can watch either (with the password for private games).</li>
+          <li><b>Rated &amp; unrated games</b> — a ranked lobby where every player starts at <b>1500 ELO</b>; each team's average rating drives per-player gains and losses, and abandoning a game dings everyone's rating.</li>
+          <li><b>In-game utilities</b> — a full game transcript, a voting record of every proposed team, and player chat in each room.</li>
+          <li><b>Individual stats</b> — game history plus win/loss splits by team and by role, including head-to-head.</li>
+          <li><b>App stats</b> — player and user growth over time, and a top-5 leaderboard by rating.</li>
+        </ul>
+
+        <div class="proj-h">How to play</div>
+        <ol class="proj-feat">
+          <li>Register a user (username, email, password).</li>
+          <li>Create a game in the lobby and join the room.</li>
+          <li>Wait for others to join — or invite your friends.</li>
+          <li>Pick the roles and setup for your game.</li>
+          <li>Play!</li>
+        </ol>
+
+        <details class="proj-faq">
+          <summary>FAQ</summary>
+          <p class="q">How do I play Avalon?</p>
+          <p class="a">See the in-app <a href="https://likev12.github.io/AvalonApp/#/rules" target="_blank" rel="noopener">Rules</a> page, or the
+            <a href="http://upload.snakesandlattes.com/rules/r/ResistanceAvalon.pdf" target="_blank" rel="noopener">written rules (PDF)</a> and a
+            <a href="https://youtu.be/rXlK3NZjLGc" target="_blank" rel="noopener">video explanation</a>.</p>
+          <p class="q">How is the game-room leader determined?</p>
+          <p class="a">The first person to enter the room — not necessarily whoever created it.</p>
+          <p class="q">Are there restrictions on a valid game setup?</p>
+          <p class="a">Yes: 5–12 players; at least one role from each team; more than half the players on the Resistance team; Percival and Morgana must be included together; and Drunk Merlin only if Merlin is also in.</p>
+          <p class="q">What does the Drunk Merlin role do?</p>
+          <p class="a">Short answer: cause chaos. Drunk Merlin sees himself as Merlin with Merlin-style information — except it's completely random, so he may "see" Resistance players as Spies. It also makes the real Merlin less certain of his own role, since he could be the Drunk one.</p>
+          <p class="q">Who assassinates if the Assassin role isn't in the game?</p>
+          <p class="a">Precedence goes Assassin → Morgana → Minion → Mordred → Oberon. In practice the Spy team should agree on a target together first.</p>
+          <p class="q">Is there a time limit?</p>
+          <p class="a">Yes — a hard 4-hour limit, after which a game is finished and deleted.</p>
+          <p class="q">I accidentally closed my browser — can I rejoin?</p>
+          <p class="a">Yes, log back in and rejoin the game room.</p>
+          <p class="q">How does the ELO rating work?</p>
+          <p class="a">Higher rating = higher expected skill. If a stronger team is favored to win, they gain less for winning (and the underdog gains more). Winners always gain ELO and losers always lose it.</p>
+          <p class="q">Can I play on mobile?</p>
+          <p class="a">It wasn't designed for mobile — use it as a web app for the best experience.</p>
+        </details>
+
+        <p class="proj-cap">Built by two Avalon fans as a hobby. The game server isn't hosted anymore, so the live site now runs as a static front-end (the Rules page still works) — the video above is a full walkthrough of it in action.</p>
       </div>
     </section>
 
@@ -346,6 +405,7 @@
     Object.values(views).forEach(id => document.getElementById(id).classList.remove('active'));
     document.getElementById(views[view]).classList.add('active');
     document.querySelectorAll('.navlink').forEach(n => n.classList.toggle('active', n.dataset.view === view));
+    if (view === 'projects') { const v = document.querySelector('#view-projects video'); if (v) { try { v.play().catch(() => {}); } catch (e) {} } }
     window.scrollTo(0, 0);
   }
   document.addEventListener('click', e => { const t = e.target.closest('[data-view]'); if (t) { e.preventDefault(); show(t.dataset.view); } });
