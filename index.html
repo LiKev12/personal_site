@@ -103,6 +103,9 @@
   .demo-meta b { color: var(--ink); font-weight: 600; }
   .demo-meta button { font-family: var(--mono); font-size: 11.5px; margin-top: 10px; background: none; border: 1px solid var(--line); color: var(--muted); padding: 5px 10px; border-radius: 7px; cursor: pointer; display: block; }
   .demo-meta button:hover { color: var(--accent); border-color: var(--accent); }
+  .proj-media { margin: 14px 0 2px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); max-width: 720px; }
+  .proj-media img { display: block; width: 100%; height: auto; }
+  .proj-cap { font-family: var(--mono); font-size: 11px; color: var(--faint); margin: 8px 0 2px; max-width: 60ch; line-height: 1.6; }
   .win { color: var(--accent); }
 
   /* ---------- Posts list ---------- */
@@ -253,6 +256,7 @@
     <nav>
       <a class="navlink active" data-view="home">Home</a>
       <a class="navlink" data-view="posts">Jots</a>
+      <a class="navlink" data-view="projects">Projects</a>
     </nav>
     <div class="side-foot">
       <span class="sig">© 2026</span>
@@ -301,6 +305,30 @@
       <div id="postlist"></div>
     </section>
 
+    <!-- PROJECTS -->
+    <section class="view" id="view-projects">
+      <h1 class="lead">Projects</h1>
+      <p class="intro">Things I've built for fun, outside of work.</p>
+      <div class="section-label">Selected builds</div>
+
+      <div class="thing">
+        <h3>Avalon</h3>
+        <p>A real-time, multiplayer web version of the social-deduction game
+        <em>The Resistance: Avalon</em> — lobbies, live chat, hidden roles, and the full
+        mission-and-voting flow. Built with React, Node/Express, Socket.io, and MongoDB.</p>
+        <figure class="proj-media">
+          <img src="assets/avalon-demo.gif" width="820" height="513" loading="lazy"
+            alt="Screen recording of the Avalon web app — home page, game lobby, hidden roles, and mission voting.">
+        </figure>
+        <p class="proj-cap">↑ demo walkthrough · the game server isn't hosted anymore, so the live site is a static front-end — but the rules page still works.</p>
+        <div class="brackets">
+          <a href="https://likev12.github.io/AvalonApp/#/rules" target="_blank" rel="noopener">rules</a>
+          <a href="https://likev12.github.io/AvalonApp/" target="_blank" rel="noopener">live site</a>
+          <a href="https://github.com/LiKev12/AvalonApp" target="_blank" rel="noopener">source</a>
+        </div>
+      </div>
+    </section>
+
     <!-- ARTICLE -->
     <section class="view" id="view-article">
       <a class="back" data-view="posts">← back to jots</a>
@@ -310,7 +338,7 @@
 </div>
 
 <script>
-  const views = { home: 'view-home', posts: 'view-posts', article: 'view-article' };
+  const views = { home: 'view-home', posts: 'view-posts', projects: 'view-projects', article: 'view-article' };
   let cleanup = null;
   function runCleanup() { if (cleanup) { cleanup(); cleanup = null; } }
   function show(view) {
@@ -960,21 +988,6 @@ exposures         = times that word sat on the board under that clue  (confidenc
         <p class="note">Stylized model: a 1×1 block, uniform rain at the speed you pick, no splashback, no gusts. The numbers are exact
         for these assumptions — change the block shape, the rain speed, or the angle and the magnitudes shift, but "running
         never gets you wetter" holds across all three cases here.</p>`
-    },
-    {
-      date: '2026 · 09 · 05',
-      title: 'Animating a tennis serve with 20 lines of Canvas',
-      sub: 'A parabola, some drag, and a bounce — live in the page.',
-      init: tennisInit,
-      body: `
-        <h1>Animating a tennis serve with 20 lines of Canvas</h1>
-        <div class="meta">September 5, 2026 · 3 min read</div>
-        <p>A post doesn't have to be a static wall of text — it can <em>show</em> the thing. Below is a real
-        <code>&lt;canvas&gt;</code> running projectile motion with a little energy loss on each bounce.</p>
-        <figure><canvas id="tennis" width="640" height="260"></canvas><figcaption>gravity + restitution · runs in your browser</figcaption></figure>
-        <p>The math is barely more than high-school kinematics: each frame the vertical velocity gains a bit of gravity,
-        position updates, and on contact with the floor the velocity flips and shrinks by a restitution factor.</p>
-        <p class="note">Placeholder demo — kept around to show that arbitrary HTML/CSS/JS animation drops cleanly into a post.</p>`
     }
   ];
 
@@ -1231,30 +1244,6 @@ exposures         = times that word sat on the board under that clue  (confidenc
     return () => { if (raf) cancelAnimationFrame(raf); };
   }
 
-  /* ---------------- Tennis post init ---------------- */
-  function tennisInit() {
-    const cv = document.getElementById('tennis'); if (!cv) return null;
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, floor = H - 26;
-    let x, y, vx, vy, trail, raf = null;
-    function reset(){ x=34; y=40; vx=3.0; vy=0; trail=[]; }
-    reset();
-    function frame(){
-      const accent = V('--accent'), line = V('--line'), faint = V('--faint'), ground = V('--ground');
-      ctx.clearRect(0,0,W,H);
-      ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(0,floor+12); ctx.lineTo(W,floor+12); ctx.stroke();
-      vy += 0.35; x += vx; y += vy;
-      if (y > floor) { y = floor; vy *= -0.74; if (Math.abs(vy) < 1) vy = 0; }
-      if (x > W-34) reset();
-      trail.push([x,y]); if (trail.length > 42) trail.shift();
-      trail.forEach((p,k) => { ctx.globalAlpha = (k/trail.length)*0.5; ctx.fillStyle = faint; ctx.beginPath(); ctx.arc(p[0],p[1],2,0,7); ctx.fill(); });
-      ctx.globalAlpha = 1; ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(x,y,7,0,7); ctx.fill();
-      ctx.strokeStyle = ground; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(x,y,7,-0.6,0.9); ctx.stroke();
-      if (!reduce) raf = requestAnimationFrame(frame);
-    }
-    frame();
-    return () => { if (raf) cancelAnimationFrame(raf); };
-  }
 </script>
 
 </body>
