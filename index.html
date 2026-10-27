@@ -1052,6 +1052,7 @@ exposures         = times that word sat on the board under that clue  (confidenc
   ];
 
   const list = document.getElementById('postlist');
+  posts.sort((a, b) => b.date.replace(/\D/g, '') - a.date.replace(/\D/g, '')); // newest first
   posts.forEach((p, i) => {
     const row = document.createElement('a');
     row.className = 'post-row';
